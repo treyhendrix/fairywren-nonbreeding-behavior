@@ -1,0 +1,6 @@
+Response_variable,statistic,df,p.value,Pseudo_R2
+Allopreening_bin,13.233,6,0.039,0.055
+Chasing_bin,10.887,6,0.092,0.063
+Courtship_bin,49.922,5,0,0.312
+Preening_bin,9.888,6,0.129,0.02
+Vocalizing_bin,5.451,6,0.487,0.011
