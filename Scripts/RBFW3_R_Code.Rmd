@@ -48,21 +48,37 @@ sessionInfo()
 ```
 
 # Data
-The data have been uploaded to Figshare. They can be accessed using the follwing DOI link [https://doi.org/10.6084/m9.figshare.15088014](https://doi.org/10.6084/m9.figshare.15088014). The datafile necessary is "RBFW3_Anon_Data_210720.csv". This datafile is also available in the [fairywren-nonbreeding-behavior](https://github.com/treyhendrix/fairywren-nonbreeding-behavior) GitHub repository in the "Data" folder. The contents of these data are detailed in the description on Figshare and in a metadata file in the GitHub repository. The structure of the data frame is: 
-```{r Data Path}
+This manuscript uses two datasets: (1) focal behavioural observations, which is a file named "RBFW3_Anon_Data_210720.csv" and (2) opportunistic behavioural observations, which is a file named "RBFW3_Anon_Opportunistic_Data_230116.csv"
+
+Both datasets have been uploads to Figshare using the following DOI links: 
+
+* Focal data: [https://doi.org/10.6084/m9.figshare.15088014](https://doi.org/10.6084/m9.figshare.15088014).
+* Opportunistic data: [https://doi.org/10.6084/m9.figshare.21790187](https://doi.org/10.6084/m9.figshare.21790187)
+
+They are also available in the [fairywren-nonbreeding-behavior](https://github.com/treyhendrix/fairywren-nonbreeding-behavior) GitHub repository in the "Data" folder. The contents of these datasets are detailed in the descriptions on Figshare and in a metadata file in the GitHub repository. 
+
+The majority of our analyses focus on the focal observational data, which is simply referred to as "RBFW" in the following code. The opportunistic behavioural data is used for generate supplementary figures and tables and is referred to as "RBFW_sup" in code. 
+```{r Data Paths}
 working_directory <- getwd()
 project_file_path <- str_remove(working_directory, pattern = fixed("/Scripts")) # This code might need to be modified on your machine to produce the correct file path
 
-file_path_to_RBFW_csv <- paste0(project_file_path, "/Data/RBFW3_Anon_Data_210720.csv")
+file_path_to_focal_data <- paste0(project_file_path, "/Data/RBFW3_Anon_Data_210720.csv")
+
+file_path_to_opp_data <- paste0(project_file_path, "/Data/RBFW3_Anon_Opportunistic_Data_230116.csv")
 ```
 
-```{r Data frame structure, include = TRUE}
-RBFW <- read_csv(file_path_to_RBFW_csv)
+```{r Focal dataframe structure, include = TRUE}
+RBFW <- read_csv(file_path_to_focal_data)
 glimpse(RBFW)
 ```
 
+```{r Opportunistic dataframe structure, include = TRUE}
+RBFW_sup <- read_csv(file_path_to_opp_data)
+glimpse(RBFW_sup)
+```
+
 # Logistic Mixed-effects Models 
-In our analysis, we use logistic mixed-effects models with a binomial distribution and logit link to determine which factors (plumage category, age, and day of year) predict whether or not a behaviour of interest (allopreening, chasing, courtship, preening, and vocalizing) was observed during an observation.
+In our analysis, we use logistic mixed-effects models with a binomial distribution and logit link to determine which factors (plumage category, age, and day of year) predict whether or not a behaviour of interest (allopreening, chasing, courtship, preening, and vocalizing) was observed during a focal behavioural observation.
 
 The general format of these models (in the notation of the lme4 package) is: 
 
@@ -590,10 +606,57 @@ model_fit_vizualizer <- function(model, fixed_effects, df, label){
 Add description of Supplemental data on Figshare, explain that Table S1 is just an ethogram, and verify that figures are labeled correctly
 
 ## Table S1
+Caption: Description of behavioural categories used during focal observations.
+
+This table includes only qualitative descriptions of behaviours and was generated entirely in Microsoft Word.
 
 ## Table S2
+Caption: Proportion of the opportunistically observed interactions in which a dyad of RBFWs were (2) each other’s first (in the case of repairing) social mate in the breeding season after the nonbreeding season in which they were observed, (2) members of the same breeding group during the breeding season preceding the nonbreeding season in which the interaction occurred, (3) two males that were in different breeding groups during the previous breeding season, and (4) a male and female that were neither social mates during the following breeding season nor members of the same breeding group during the preceding breeding season. The numbers in parentheses report the number of observations of a particular behaviour in which complete information for both interacting birds with respect to the previously described social relationships were known. 
+
 #### Bookmark 10 February 2023 ####
 Need to transfer this code from other scripts and import the opportunistic dataset 
+
+```{r Table S2, include = TRUE}
+# Adding and defining additional social contexts to opportunistic data
+RBFW_sup <- RBFW_sup %>% 
+  mutate(Male_male = case_when(Sender_sex == "M" & Receiver_sex == "M" ~ 1, 
+                               is.na(Sender_sex) | is.na(Receiver_sex) ~ NA_real_,
+                               TRUE ~ 0), 
+         Male_female = case_when(Sender_sex == "M" & Receiver_sex == "M" ~ 0,
+                                 Sender_sex == "F" & Receiver_sex == "F" ~ 0,
+                                 is.na(Sender_sex) | is.na(Receiver_sex) ~ NA_real_,
+                                 TRUE ~ 1), 
+         Female_female = case_when(Sender_sex == "F" & Receiver_sex == "F" ~ 1, 
+                                   is.na(Sender_sex) | is.na(Receiver_sex) ~ NA_real_,
+                                   TRUE ~ 0), 
+         Extra_group_males = case_when(Male_male == 1 & Prev_breeding_group == 0 ~ 1, 
+                                       is.na(Male_male) | is.na(Prev_breeding_group) ~ NA_real_, 
+                                       TRUE ~ 0), 
+         Potential_extra_pair_mates = case_when(Male_female == 1 & Social_mate == 0 & Prev_breeding_group == 0 ~ 1, 
+                                                is.na(Male_female) | is.na(Social_mate) | is.na(Prev_breeding_group) ~ NA_real_,
+                                                TRUE ~ 0))
+
+# Function for printing percent and sample size e.g., 45% (90 of 200)
+percent_sample_size_calculator <- function(x){
+  Sample_size <- sum((!is.na(x)))
+  Sum <- sum(x, na.rm = TRUE)
+  Percent <- round(Sum/Sample_size*100, 0)
+  z <- paste(Percent, "%", " (", Sum, " of ", Sample_size, ")", sep = "")
+  return(z)
+}
+
+table_s2 <- RBFW_sup %>%
+  group_by(Behavior) %>%
+  summarize(across(c(Social_mate, Prev_breeding_group, Extra_group_males, Potential_extra_pair_mates), percent_sample_size_calculator))
+
+table_s2 %>% 
+  kable()
+```
+
+```{r Saving Table S2}
+write_csv(table_s2, paste0(output_file_path, "/Table_S2.csv"))
+```
+
 
 ## Figure S1
 ```{r Seasonality Figure, include = TRUE}
