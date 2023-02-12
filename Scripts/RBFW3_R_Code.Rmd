@@ -147,7 +147,7 @@ theme_simple <- theme(panel.grid.major = element_blank(),
 
 class_colors <- c("navajowhite2", "orange2", "firebrick")
 rain_color <- "cyan4"
-
+  
 # Fixed Effects 
 general_fixed_effects <- paste("Plumage_group", "Year", 
                                "Age_st", "Day_of_year_st", 
@@ -963,14 +963,11 @@ ggsave(paste0(output_file_path, "/Figure_S5.pdf"), plot = figure_s5, width = 7, 
 ## Figure S6
 Heat map representing the proportion of opportunistic observations on allopreening, chasing, and courtship that were between RBFW females and the three male plumage categories. For chasing and courtship, a sender (e.g., the RBFW chasing another or giving a courtship display) and receiver are identified. For allopreening (mutual grooming), it was not possible to assign a sender and receiver, so each of the interacting RBFWs was arbitrarily assigned either “Bird A” or “Bird B” and the order of the categories in the heat map is not meaningful.
 
-#### Bookmark 2 October 2022 #### 
-Need to clean up this code
 ```{r Heat map, include = TRUEe}
+# Adding more general categories (combining plumage category and sex)
 RBFW_sup <- RBFW_sup %>%
   mutate(Sender_category = ifelse(Sender_sex == "M", paste(Sender_plumage_category, "male"), "Female"), 
          Receiver_category = ifelse(Receiver_sex == "M", paste(Receiver_plumage_category, "male"), "Female"))
-
-RBFW_sup %>% select(Sender, Receiver, Sender_sex, Receiver_sex, Sender_category, Receiver_category) # looks good
 
 plumage_figure_df <- RBFW_sup %>%
   select(Behavior, Sender_category, Receiver_category) %>%
@@ -988,17 +985,17 @@ plumage_figure_df <- RBFW_sup %>%
   select(-Behavior_sum) %>%
   pivot_longer(Female:`Unornamented male`, names_to = "Receiver_category", values_to = "Percent_observations")
 
-# Plumage figure theme
-simple_theme <- theme(panel.grid.major = element_blank(), 
-                      panel.grid.minor = element_blank(),
-                      panel.background = element_blank(), 
-                      axis.line = element_line(colour = "black"), 
-                      plot.title = element_text(hjust = 0.5), 
-                      legend.position = "none", 
-                      axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1, size = 8), 
-                      axis.text.y = element_text(size = 8))
+# Modifed theme
+s6_theme <- theme_simple + 
+  theme( legend.position = "none", 
+         axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1, size = 8), 
+         axis.text.y = element_text(size = 8))
 
 gradient_scale <- scale_fill_gradient(low = "#ffffff", high = "#7e2704", limits = c(0, max(plumage_figure_df$Percent_observations)))
+
+
+#### Bookmark 2 October 2022 #### 
+#Need to clean up this code
 
 # Chasing Figure
 chasing_figure <- plumage_figure_df %>%
@@ -1006,7 +1003,7 @@ chasing_figure <- plumage_figure_df %>%
   mutate(across(c(Sender_category, Receiver_category), ~ factor(.x, levels = c("Female", "Unornamented male", "Moulting male", "Ornamented male")))) %>%
   ggplot(aes(x = Sender_category, y = Receiver_category, fill = Percent_observations)) + 
   geom_tile(color = "black") + 
-  simple_theme + 
+  s6_theme + 
   gradient_scale + 
   labs(x = "Sender", y = "Receiver") + 
   ggtitle("Chasing")
@@ -1022,7 +1019,7 @@ courtship_figure <- plumage_figure_df %>%
   ungroup() %>%
   ggplot(aes(x = Sender_category, y = Receiver_category, fill = Percent_observations)) + 
   geom_tile(color = "black") + 
-  simple_theme + 
+  s6_theme + 
   gradient_scale + 
   labs(x = "Sender", y = "Receiver") + 
   ggtitle("Courtship")
@@ -1056,7 +1053,7 @@ allopreening_figure <- data.frame(allo_matrix_final) %>%
   ggplot(aes(x = Sender_category, y = Receiver_category, fill = Percent_observations)) + 
   geom_tile(color = "black") + 
   gradient_scale +
-  simple_theme + 
+  s6_theme + 
   labs(x = "Bird A", y = "Bird B", fill = "Percent of Observations", color = "No data") + 
   ggtitle("Allopreening") 
 
