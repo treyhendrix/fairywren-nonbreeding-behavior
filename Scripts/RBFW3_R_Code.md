@@ -434,7 +434,7 @@ logistic_modeler("Allopreening_bin", general_fixed_effects)
     ## 
     ## [[2]][[2]]
 
-![](RBFW3_R_Code_files/figure-gfm/Model%20Results-1.png)<!-- -->
+![](RBFW3_R_Code_figures_for_markdown/Model%20Results-1.png)<!-- -->
 
 ``` r
 allo_model <- logistic_modeler("Allopreening_bin", 
@@ -515,7 +515,7 @@ logistic_modeler("Courtship_bin", court_fixed_effects)
     ## 
     ## [[2]][[2]]
 
-![](RBFW3_R_Code_files/figure-gfm/Model%20Results-2.png)<!-- -->
+![](RBFW3_R_Code_figures_for_markdown/Model%20Results-2.png)<!-- -->
 
 ``` r
 court_model <- logistic_modeler("Courtship_bin", 
@@ -592,7 +592,7 @@ logistic_modeler("Chasing_bin", general_fixed_effects)
     ## 
     ## [[2]][[2]]
 
-![](RBFW3_R_Code_files/figure-gfm/Model%20Results-3.png)<!-- -->
+![](RBFW3_R_Code_figures_for_markdown/Model%20Results-3.png)<!-- -->
 
 ``` r
 chase_model <- logistic_modeler("Chasing_bin", 
@@ -669,7 +669,7 @@ logistic_modeler("Preening_bin", general_fixed_effects)
     ## 
     ## [[2]][[2]]
 
-![](RBFW3_R_Code_files/figure-gfm/Model%20Results-4.png)<!-- -->
+![](RBFW3_R_Code_figures_for_markdown/Model%20Results-4.png)<!-- -->
 
 ``` r
 preen_model <- logistic_modeler("Preening_bin", 
@@ -750,7 +750,7 @@ logistic_modeler("Vocalizing_bin", general_fixed_effects)
     ## 
     ## [[2]][[2]]
 
-![](RBFW3_R_Code_files/figure-gfm/Model%20Results-5.png)<!-- -->
+![](RBFW3_R_Code_figures_for_markdown/Model%20Results-5.png)<!-- -->
 
 ``` r
 voc_model <- logistic_modeler("Vocalizing_bin", 
@@ -1028,7 +1028,7 @@ grid_poportion_and_model_plots <- grid.arrange(court_freq_plot,
                                                widths = c(15, 20))
 ```
 
-![](RBFW3_R_Code_files/figure-gfm/Major%20results%20figure-1.png)<!-- -->
+![](RBFW3_R_Code_figures_for_markdown/Major%20results%20figure-1.png)<!-- -->
 
 ## Reproducing Statistics Reported in Text
 
@@ -1297,7 +1297,7 @@ figure_s1 <- RBFW %>%
 figure_s1
 ```
 
-![](RBFW3_R_Code_files/figure-gfm/Seasonality%20Figure-1.png)<!-- -->
+![](RBFW3_R_Code_figures_for_markdown/Seasonality%20Figure-1.png)<!-- -->
 
 ## Figure S2
 
@@ -1372,7 +1372,7 @@ figure_s2 <- ggarrange(figure_s2_a, figure_s2_b, ncol=2, nrow=1,
 figure_s2
 ```
 
-![](RBFW3_R_Code_files/figure-gfm/Year%20plot-1.png)<!-- -->
+![](RBFW3_R_Code_figures_for_markdown/Year%20plot-1.png)<!-- -->
 
 ## Figure S3
 
@@ -1389,17 +1389,186 @@ he was observed in a particular plumage category.
 
 I need to clean this code up
 
+``` r
+heat_map_df <- RBFW %>%
+  count(Bird_ID, Year, Plumage_group) %>%
+  mutate(across(c(Bird_ID, Plumage_group), ~ as.character(.x)), 
+         Year = as.numeric(as.character(Year))) %>%
+  #select(-n) %>%
+  pivot_wider(names_from = Plumage_group, values_from = n) %>%
+  mutate(across(DULL:MOULT, ~ifelse(is.na(.x), 0, 1)),
+         DMB = paste0(DULL, MOULT, BRIGHT)) 
+
+heat_map_list <- heat_map_df %>%
+  mutate(unique = row.names(.)) %>%
+  split(.$unique) 
+
+timeline_df_maker <- function(x){
+  
+  year = x$Year
+  
+  if(x$DMB %in% c("100", "010", "001")){
+    new_df <- data.frame(Bird_ID = x$Bird_ID, Year = year, Start = year, End = year + 1, DMB = x$DMB)
+    
+    if(x$DMB == "100"){
+      new_df$Color <- "Unornamented"
+    }
+    
+    if(x$DMB == "010"){
+      new_df$Color <- "Moulting"
+    }
+    
+    if(x$DMB == "001"){
+      new_df$Color <- "Ornamented"
+    }
+    
+  }
+  
+  if(x$DMB %in% c("110", "011", "101")){
+    
+    new_df <- data.frame(Bird_ID = x$Bird_ID, Year = year, Start = c(year, year + 0.5), End = c(year + 0.5, year + 1), DMB = x$DMB)
+    
+    if(x$DMB == "110"){
+      new_df$Color <- c("Unornamented", "Moulting")
+    }
+    
+    if(x$DMB == "011"){
+      new_df$Color <- c("Moulting", "Ornamented")
+    }
+    
+    if(x$DMB == "101"){
+      new_df$Color <- c("Unornamented", "Ornamented")
+    }
+    
+  }
+  
+  if(x$DMB == "111"){
+    
+    new_df <- data.frame(Bird_ID = x$Bird_ID, Year = year, Start = c(year, year + 1/3, year + 2/3), End = c(year + 1/3, year + 2/3, year + 1), Color = c("Unornamented", "Moulting", "Ornamented"), DMB = x$DMB)
+    
+  }
+  
+  return(new_df)
+}
+
+timeline_df <- lapply(heat_map_list, timeline_df_maker) %>% bind_rows()
+
+
+# Sorting based on length of row
+sort_score_1_df <- timeline_df %>%
+  count(Bird_ID, Year) %>%
+  pivot_wider(names_from = Year, values_from = n, values_fill = 0, names_prefix = "Y") %>%
+  ungroup() %>%
+  group_by(Bird_ID) %>%
+  summarize(Sort_score_1 = case_when(Y2016 > 0 && Y2017 == 0 && Y2018 == 0 ~ 700, 
+                                     Y2016 > 0 && Y2017 > 0 && Y2018 == 0 ~ 600,
+                                     Y2016 == 0 && Y2017 > 0 && Y2018 == 0 ~ 500,
+                                     Y2016 == 0 && Y2017 > 0 && Y2018 > 0 ~ 400,
+                                     Y2016 == 0 && Y2017 == 0 && Y2018 > 0 ~ 300,
+                                     Y2016 > 0 && Y2017 > 0 && Y2018 > 0 ~ 100,
+                                     Y2016 > 0 && Y2017 == 0 && Y2018 > 0 ~ 200,
+                                     TRUE ~ NA_real_)) %>%
+  ungroup() %>%
+  select(Bird_ID, Sort_score_1)
+
+sort_score_2_df <- timeline_df %>%
+  select(Bird_ID, Year, DMB) %>%
+  unique() %>%
+  mutate(Plumage_diversity_score = case_when(DMB == "100" ~ 7,
+                                             DMB == "010" ~ 6,
+                                             DMB == "001" ~ 5,
+                                             DMB == "110" ~ 4,
+                                             DMB == "011" ~ 3, 
+                                             DMB == "101" ~ 2, 
+                                             DMB == "111" ~ 1, 
+                                             TRUE ~ NA_real_)) %>%
+  group_by(Bird_ID) %>%
+  summarize(Sort_score_2 = sum(Plumage_diversity_score)) %>%
+  ungroup()
+
+
+sorted_birds <- sort_score_1_df %>%
+  left_join(sort_score_2_df, by = "Bird_ID") %>%
+  mutate(Sort_score = Sort_score_1 + Sort_score_2) %>%
+  arrange(Sort_score) %>%
+  pull(Bird_ID) %>%
+  unique()
+
+
+
+figure_s3 <- timeline_df %>%
+  mutate(Bird_ID = factor(Bird_ID, levels = sorted_birds), 
+         Color = factor(Color, levels = c("Unornamented", "Moulting", "Ornamented"))) %>%
+  ggplot(aes(x = Year, y = Bird_ID)) + 
+  geom_segment(aes(x = Start, xend = End, color = Color, yend = Bird_ID)) + 
+  scale_color_manual(values = c("navajowhite2", "orange2", "firebrick")) + 
+  theme_simple + 
+  theme(axis.text.y = element_blank(), 
+        axis.ticks.y = element_blank(), 
+        legend.position = "top", 
+        legend.text = element_text(size = 8)) + 
+  labs(y = "Focal Bird", color = "") + 
+  scale_x_continuous(breaks = c(2016, 2017, 2018) + 0.5, labels = c(2016, 2017, 2018))
+
+figure_s3
+```
+
+![](RBFW3_R_Code_figures_for_markdown/Timeline%20Figure-1.png)<!-- -->
+
 ## Figure S4
 
 Histograms showing the distribution of the proportion of time focal
 males spent engaged in allopreening, chasing, courtship, preening, and
 vocalizing.
 
+``` r
+figure_s4 <- RBFW %>% 
+  select(Plumage_group, Allopreening_prop, Chasing_prop, Courtship_prop, Preening_prop, Vocalizing_prop) %>%
+  pivot_longer(cols = ends_with("prop"), names_to = "Behavior", values_to = "Proportion") %>%
+  mutate(Plumage_group = case_when(Plumage_group == "DULL" ~ "Unornamented", 
+                                   Plumage_group == "MOULT" ~ "Moulting", 
+                                   Plumage_group == "BRIGHT" ~ "Ornamented"),
+         Plumage_group = factor(Plumage_group, 
+                                levels = c("Unornamented", "Moulting", "Ornamented"))) %>%
+  mutate(Behavior = str_sub(Behavior, start = 1, end = -5)) %>%
+  ggplot(aes(x = Proportion, fill = Plumage_group)) + 
+  geom_histogram(bins = 30) + 
+  theme_simple + 
+  facet_grid(Plumage_group ~ Behavior, scales = "free") + 
+  scale_fill_manual(values = class_colors) + 
+  theme(legend.position = "None") + 
+  labs(x = "Proportion of Observation with Behaviour", y = "Number of Observations") + 
+  theme(panel.background = element_rect(fill = NA, color = "black"))
+
+figure_s4 
+```
+
+![](RBFW3_R_Code_figures_for_markdown/Histogram%20of%20proportion%20of%20behaviors-1.png)<!-- -->
+
 ## Figure S5
 
 The average proportion of focal observations in which a male was
 observed engaging in the five behaviours of interest. Error bars show
 95% confidence intervals.
+
+``` r
+figure_s5 <- behaviour_plumage_summary_error_df %>% 
+  mutate(behaviour = str_sub(behaviour, start = 1, end = -5)) %>% 
+  ggplot(aes(x = Plumage_group, y = mean, fill = Plumage_group)) + 
+  geom_col(position = "dodge") + 
+  geom_errorbar(aes(ymin = lower, ymax = upper), width = 0.5) + 
+  scale_fill_manual(values = class_colors) + 
+  theme_simple + 
+  theme(legend.position = "none") + 
+  labs(x = "Plumage Group", y = "Proportion of Observations with Behaviour") +
+  facet_wrap(~ behaviour) + 
+  scale_x_discrete(labels = c("Unornamented", "Moulting", "Ornamented")) +
+  theme(axis.text.x = element_text(size = 8))
+
+figure_s5
+```
+
+![](RBFW3_R_Code_figures_for_markdown/Proportion%20of%20all%20observations%20containing%20focal%20behaviors-1.png)<!-- -->
 
 ## Figure S6
 
@@ -1507,4 +1676,8 @@ allopreening_figure <- data.frame(allo_matrix_final) %>%
 mylegend <- g_legend(allopreening_figure + theme(legend.position = "right"))
 
 figure_s6 <- ggarrange(allopreening_figure, chasing_figure, courtship_figure, mylegend,  ncol=2, nrow = 2)
+
+figure_s6 
 ```
+
+![](RBFW3_R_Code_figures_for_markdown/Heat%20map-1.png)<!-- -->

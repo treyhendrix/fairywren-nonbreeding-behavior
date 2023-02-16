@@ -1,29 +1,28 @@
----
-title: R Code for Behavioural differences between ornamented and unornamented male
-  Red-backed Fairywrens (*Malurus melanocephalus*) in the nonbreeding season
-author: "Trey C. Hendrix"
-date: "Updated on 15 February 2023"
-output: 
-  rmarkdown::github_document:
-    toc: true
-    toc_depth: 2
----
-
-This document contains the R code used to produce the analyses, figures, and supplemental material for the article submitted to *Emu* entitled "Behavioural differences between ornamented and unornamented male Red-backed Fairywrens (*Malurus melanocephalus*) in the nonbreeding season". The complete list of authors is: Trey C. Hendrix, Facundo Fernandez-Duque, Sarah Toner, Lauren G. Hitt, Robin G. Thady, Megan Massa, Samantha J. Hagler, Margaux Armfield, Nathalie Clarke, Phoebe Honscheid, Sarah Khalil, Carly E. Hawkins, Samantha M. Lantz, Joseph F. Welklin, John P. Swaddle, Michael S. Webster, and Jordan Karubian.
-
-```{r setup, include = FALSE, warning = FALSE, message = FALSE}
+#' ---
+#' title: R Code for Behavioural differences between ornamented and unornamented male
+#'   Red-backed Fairywrens (*Malurus melanocephalus*) in the nonbreeding season
+#' author: "Trey C. Hendrix"
+#' date: "Updated on 15 February 2023"
+#' output: 
+#'   rmarkdown::github_document:
+#'     toc: true
+#'     toc_depth: 2
+#' ---
+#' 
+#' This document contains the R code used to produce the analyses, figures, and supplemental material for the article submitted to *Emu* entitled "Behavioural differences between ornamented and unornamented male Red-backed Fairywrens (*Malurus melanocephalus*) in the nonbreeding season". The complete list of authors is: Trey C. Hendrix, Facundo Fernandez-Duque, Sarah Toner, Lauren G. Hitt, Robin G. Thady, Megan Massa, Samantha J. Hagler, Margaux Armfield, Nathalie Clarke, Phoebe Honscheid, Sarah Khalil, Carly E. Hawkins, Samantha M. Lantz, Joseph F. Welklin, John P. Swaddle, Michael S. Webster, and Jordan Karubian.
+#' 
+## ----setup, include = FALSE, warning = FALSE, message = FALSE------------------------------------------------------------
 knitr::opts_chunk$set(
   echo = TRUE,
   message = FALSE,
   warning = FALSE,
-  include = FALSE, 
-  fig.path = "RBFW3_R_Code_figures_for_markdown/"
+  include = FALSE
 )
-```
 
-
-# Required Packages
-```{r Packages, include = TRUE}
+#' 
+#' 
+#' # Required Packages
+## ----Packages, include = TRUE--------------------------------------------------------------------------------------------
 library(readr)
 library(ggplot2)
 library(dplyr)
@@ -39,53 +38,53 @@ library(DHARMa)
 library(gridExtra)
 library(ggpubr)
 library(lemon)
-```
 
-This document was created using: 
-```{r Version, include = TRUE}
+#' 
+#' This document was created using: 
+## ----Version, include = TRUE---------------------------------------------------------------------------------------------
 sessionInfo()
-```
 
-# Data
-This manuscript uses two datasets: (1) focal behavioural observations, which is a file named "RBFW3_Anon_Data_210720.csv" and (2) opportunistic behavioural observations, which is a file named "RBFW3_Anon_Opportunistic_Data_230116.csv"
-
-Both datasets have been uploads to Figshare using the following DOI links: 
-
-* Focal data: [https://doi.org/10.6084/m9.figshare.15088014](https://doi.org/10.6084/m9.figshare.15088014).
-* Opportunistic data: [https://doi.org/10.6084/m9.figshare.21790187](https://doi.org/10.6084/m9.figshare.21790187)
-
-They are also available in the [fairywren-nonbreeding-behavior](https://github.com/treyhendrix/fairywren-nonbreeding-behavior) GitHub repository in the "Data" folder. The contents of these datasets are detailed in the descriptions on Figshare and in a metadata file in the GitHub repository. 
-
-The majority of our analyses focus on the focal observational data, which is simply referred to as "RBFW" in the following code. The opportunistic behavioural data is used for generate supplementary figures and tables and is referred to as "RBFW_sup" in code. 
-```{r Data Paths}
+#' 
+#' # Data
+#' This manuscript uses two datasets: (1) focal behavioural observations, which is a file named "RBFW3_Anon_Data_210720.csv" and (2) opportunistic behavioural observations, which is a file named "RBFW3_Anon_Opportunistic_Data_230116.csv"
+#' 
+#' Both datasets have been uploads to Figshare using the following DOI links: 
+#' 
+#' * Focal data: [https://doi.org/10.6084/m9.figshare.15088014](https://doi.org/10.6084/m9.figshare.15088014).
+#' * Opportunistic data: [https://doi.org/10.6084/m9.figshare.21790187](https://doi.org/10.6084/m9.figshare.21790187)
+#' 
+#' They are also available in the [fairywren-nonbreeding-behavior](https://github.com/treyhendrix/fairywren-nonbreeding-behavior) GitHub repository in the "Data" folder. The contents of these datasets are detailed in the descriptions on Figshare and in a metadata file in the GitHub repository. 
+#' 
+#' The majority of our analyses focus on the focal observational data, which is simply referred to as "RBFW" in the following code. The opportunistic behavioural data is used for generate supplementary figures and tables and is referred to as "RBFW_sup" in code. 
+## ----Data Paths----------------------------------------------------------------------------------------------------------
 working_directory <- getwd()
 project_file_path <- str_remove(working_directory, pattern = fixed("/Scripts")) # This code might need to be modified on your machine to produce the correct file path
 
 file_path_to_focal_data <- paste0(project_file_path, "/Data/RBFW3_Anon_Data_210720.csv")
 
 file_path_to_opp_data <- paste0(project_file_path, "/Data/RBFW3_Anon_Opportunistic_Data_230116.csv")
-```
 
-```{r Focal dataframe structure, include = TRUE}
+#' 
+## ----Focal dataframe structure, include = TRUE---------------------------------------------------------------------------
 RBFW <- read_csv(file_path_to_focal_data)
 glimpse(RBFW)
-```
 
-```{r Opportunistic dataframe structure, include = TRUE}
+#' 
+## ----Opportunistic dataframe structure, include = TRUE-------------------------------------------------------------------
 RBFW_sup <- read_csv(file_path_to_opp_data)
 glimpse(RBFW_sup)
-```
 
-# Logistic Mixed-effects Models 
-In our analysis, we use logistic mixed-effects models with a binomial distribution and logit link to determine which factors (plumage category, age, and day of year) predict whether or not a behaviour of interest (allopreening, chasing, courtship, preening, and vocalizing) was observed during a focal behavioural observation.
-
-The general format of these models (in the notation of the lme4 package) is: 
-
-*Behaviour of interest observed (1 or 0) ~ Plumage category + Year + Age + Day of year + (1|Observer) + (1|Bird ID)*
-
-## Preparing Data for Logistic Mixed-Effects Models
-First, it is necessary to add binary variables to our dataset for our behaviours of interest:
-```{r Binary, include = TRUE}
+#' 
+#' # Logistic Mixed-effects Models 
+#' In our analysis, we use logistic mixed-effects models with a binomial distribution and logit link to determine which factors (plumage category, age, and day of year) predict whether or not a behaviour of interest (allopreening, chasing, courtship, preening, and vocalizing) was observed during a focal behavioural observation.
+#' 
+#' The general format of these models (in the notation of the lme4 package) is: 
+#' 
+#' *Behaviour of interest observed (1 or 0) ~ Plumage category + Year + Age + Day of year + (1|Observer) + (1|Bird ID)*
+#' 
+#' ## Preparing Data for Logistic Mixed-Effects Models
+#' First, it is necessary to add binary variables to our dataset for our behaviours of interest:
+## ----Binary, include = TRUE----------------------------------------------------------------------------------------------
 binaryifier <- function(var){
   ifelse(var > 0, 1, 0)
 }
@@ -103,10 +102,10 @@ RBFW_bin <- RBFW %>%
 
 RBFW <- RBFW %>%
   left_join(RBFW_bin, by = "Observation_ID")
-```
 
-All numeric variables (e.g., age and day of year) in models will be standardized as shown below:
-```{r Standardizing Terms, include = TRUE}
+#' 
+#' All numeric variables (e.g., age and day of year) in models will be standardized as shown below:
+## ----Standardizing Terms, include = TRUE---------------------------------------------------------------------------------
 standardizer <- function(x){
   y <- (x - mean(x))/sd(x)
   return(y)
@@ -115,28 +114,28 @@ standardizer <- function(x){
 RBFW <- RBFW %>% 
   mutate(Age_st = standardizer(Age), 
          Day_of_year_st = standardizer(Day_of_year))
-```
 
-The plumage category and year variables are made to be factors. For plumage category, DULL is set to be the reference category: 
-```{r Making categorical variables factors, include = TRUE}
+#' 
+#' The plumage category and year variables are made to be factors. For plumage category, DULL is set to be the reference category: 
+## ----Making categorical variables factors, include = TRUE----------------------------------------------------------------
 RBFW <- RBFW %>% 
   mutate(Plumage_group = factor(Plumage_group, levels = c("DULL", "MOULT", "BRIGHT")),
          Year = factor(Year))
-```
 
-Additionally, since courtship was only observed in BRIGHT individuals, it is necessary to compare DULL and MOULTING males together to BRIGHT males (rather than comparing DULL to MOULT and DULL to BRIGHT) to allow for a non-zero estimate of variance in the courtship model.
-```{r Plumage adjustment, include = TRUE}
+#' 
+#' Additionally, since courtship was only observed in BRIGHT individuals, it is necessary to compare DULL and MOULTING males together to BRIGHT males (rather than comparing DULL to MOULT and DULL to BRIGHT) to allow for a non-zero estimate of variance in the courtship model.
+## ----Plumage adjustment, include = TRUE----------------------------------------------------------------------------------
 RBFW <- RBFW %>%
   mutate(Plumage_group_combined = ifelse(Plumage_group == "BRIGHT", 
                                          "BRIGHT", "DULL + MOULT"),
          Plumage_group_combined = factor(Plumage_group_combined, 
                                          levels = c("DULL + MOULT", "BRIGHT")))
-```
 
-
-## Logistic Mixed-effects Models
-Here, we create a function to produce the models described above:
-```{r Model function, include = TRUE}
+#' 
+#' 
+#' ## Logistic Mixed-effects Models
+#' Here, we create a function to produce the models described above:
+## ----Model function, include = TRUE--------------------------------------------------------------------------------------
 # Formatting for graphs
 theme_simple <- theme(panel.grid.major = element_blank(), 
                       panel.grid.minor = element_blank(),
@@ -204,10 +203,10 @@ logistic_modeler <- function(dv, iv, df = RBFW){
   
   return(list)
 }
-```
 
-Applying this function to our variables of interest, produces the following results: 
-```{r Model Results, include = TRUE}
+#' 
+#' Applying this function to our variables of interest, produces the following results: 
+## ----Model Results, include = TRUE---------------------------------------------------------------------------------------
 logistic_modeler("Allopreening_bin", general_fixed_effects)
 allo_model <- logistic_modeler("Allopreening_bin", 
                                general_fixed_effects)[[1]]
@@ -227,12 +226,12 @@ preen_model <- logistic_modeler("Preening_bin",
 logistic_modeler("Vocalizing_bin", general_fixed_effects)
 voc_model <- logistic_modeler("Vocalizing_bin", 
                               general_fixed_effects)[[1]]
-```
 
-
-## Table 1
-Logistic mixed-effects models predicting the occurrence of each behaviour of interest. Each model contained plumage category, year, age, and day of year as fixed effects and the identity of the focal male and observer as random effects. 
-```{r Model table, include = TRUE}
+#' 
+#' 
+#' ## Table 1
+#' Logistic mixed-effects models predicting the occurrence of each behaviour of interest. Each model contained plumage category, year, age, and day of year as fixed effects and the identity of the focal male and observer as random effects. 
+## ----Model table, include = TRUE-----------------------------------------------------------------------------------------
 null_model_comparer <- function(model, dv, df = RBFW){
   
   # Null model 
@@ -294,19 +293,19 @@ table_1 <- anova_models %>%
 
 table_1 %>%
   kable()
-```
 
-```{r Saving table 1}
+#' 
+## ----Saving table 1------------------------------------------------------------------------------------------------------
 # Exporting table for the manuscript, further cosmetic changes (formatting) were made in Microsoft Word 
 output_file_path <- paste0(project_file_path, "/Output")
 
-write_csv(table_1, paste0(output_file_path, "/Table_1.csv"))
-```
+write_csv(table_1, paste0(output_file_path, "Table_1.csv"))
 
-
-## Figure 1
-The average proportion of focal observations in which a male was observed engaging in courtship (a) and allopreening (c). Error bars show 95% confidence intervals. b and d. Model estimates from the logistic mixed-effects models with courtship (b) and allopreening (d) as the response variables. Error bars show 95% confidence intervals. Confidence intervals that do not overlap zero are bolded. 
-```{r Major results figure, include = TRUE}
+#' 
+#' 
+#' ## Figure 1
+#' The average proportion of focal observations in which a male was observed engaging in courtship (a) and allopreening (c). Error bars show 95% confidence intervals. b and d. Model estimates from the logistic mixed-effects models with courtship (b) and allopreening (d) as the response variables. Error bars show 95% confidence intervals. Confidence intervals that do not overlap zero are bolded. 
+## ----Major results figure, include = TRUE--------------------------------------------------------------------------------
 std_error <- function(x){
   
   sd(x)/sqrt(length(x))
@@ -487,14 +486,14 @@ grid_poportion_and_model_plots <- grid.arrange(court_freq_plot,
                                                nrow = 2, 
                                                heights = c(10, 10), 
                                                widths = c(15, 20))
-```
 
-```{r Saving Figure 1}
+#' 
+## ----Saving Figure 1-----------------------------------------------------------------------------------------------------
 ggsave(paste0(output_file_path, "/Figure_1.jpeg"), dpi = 300, grid_poportion_and_model_plots)
-```
 
-## Reproducing Statistics Reported in Text
-```{r Text results, include = TRUE}
+#' 
+#' ## Reproducing Statistics Reported in Text
+## ----Text results, include = TRUE----------------------------------------------------------------------------------------
 term_remover <- function(old_model, variable_to_remove){
   
   new_model <- update(old_model, as.formula(paste(".~.-", 
@@ -531,12 +530,12 @@ RBFW %>%
   group_by(Plumage_group) %>%
   summarize(display_rate = mean(Courtship_prop))
 
-```
 
-
-
-## Assessing Model Fit Using the DHARMa Package
-```{r Interrogator function with plot labels, include = TRUE}
+#' 
+#' 
+#' 
+#' ## Assessing Model Fit Using the DHARMa Package
+## ----Interrogator function with plot labels, include = TRUE--------------------------------------------------------------
 # Creating a unique time variable to be able to look at temporal autocorrelation
 RBFW_unique_times_df <- RBFW %>% 
   arrange(Date, Time) %>% 
@@ -588,9 +587,9 @@ model_fit_vizualizer <- function(model, fixed_effects, df, label){
   testTemporalAutocorrelation(sim, df$unique_relative_time)
   title(sub = plot_label, col.sub = "darkgreen")
 }
-```
 
-```{r Assessing model fit, include = TRUE}
+#' 
+## ----Assessing model fit, include = TRUE---------------------------------------------------------------------------------
 #### Bookmark 3 October 2022 ####
 # Return here and uncomment this when the document is ready to be reviewed/finalized (this chunk takes many minutes to run)
 
@@ -600,22 +599,22 @@ model_fit_vizualizer <- function(model, fixed_effects, df, label){
 # 
 # model_fit_vizualizer(models[[3]], "Plumage_group_combined + Year + Age_st", 
 #                      RBFW, label = "Model Fit")
-```
 
-# Supplemental Material 
-#### Bookmark 10 February 2023 ####
-Add description of Supplemental data on Figshare, explain that Table S1 is just an ethogram, and verify that figures are labeled correctly
-
-## Table S1
-Description of behavioural categories used during focal observations.
-
-This table includes only qualitative descriptions of behaviours and was generated entirely in Microsoft Word.
-
-## Table S2
-Proportion of the opportunistically observed interactions in which a dyad of RBFWs were (2) each other’s first (in the case of repairing) social mate in the breeding season after the nonbreeding season in which they were observed, (2) members of the same breeding group during the breeding season preceding the nonbreeding season in which the interaction occurred, (3) two males that were in different breeding groups during the previous breeding season, and (4) a male and female that were neither social mates during the following breeding season nor members of the same breeding group during the preceding breeding season. The numbers in parentheses report the number of observations of a particular behaviour in which complete information for both interacting birds with respect to the previously described social relationships were known. 
-
-
-```{r Table S2, include = TRUE}
+#' 
+#' # Supplemental Material 
+#' #### Bookmark 10 February 2023 ####
+#' Add description of Supplemental data on Figshare, explain that Table S1 is just an ethogram, and verify that figures are labeled correctly
+#' 
+#' ## Table S1
+#' Description of behavioural categories used during focal observations.
+#' 
+#' This table includes only qualitative descriptions of behaviours and was generated entirely in Microsoft Word.
+#' 
+#' ## Table S2
+#' Proportion of the opportunistically observed interactions in which a dyad of RBFWs were (2) each other’s first (in the case of repairing) social mate in the breeding season after the nonbreeding season in which they were observed, (2) members of the same breeding group during the breeding season preceding the nonbreeding season in which the interaction occurred, (3) two males that were in different breeding groups during the previous breeding season, and (4) a male and female that were neither social mates during the following breeding season nor members of the same breeding group during the preceding breeding season. The numbers in parentheses report the number of observations of a particular behaviour in which complete information for both interacting birds with respect to the previously described social relationships were known. 
+#' 
+#' 
+## ----Table S2, include = TRUE--------------------------------------------------------------------------------------------
 # Adding and defining additional social contexts to opportunistic data
 RBFW_sup <- RBFW_sup %>% 
   mutate(Male_male = case_when(Sender_sex == "M" & Receiver_sex == "M" ~ 1, 
@@ -650,16 +649,16 @@ table_s2 <- RBFW_sup %>%
 
 table_s2 %>% 
   kable()
-```
 
-```{r Saving Table S2}
+#' 
+## ----Saving Table S2-----------------------------------------------------------------------------------------------------
 write_csv(table_s2, paste0(output_file_path, "/Table_S2.csv"))
-```
 
-
-## Figure S1
-Histograms of the number of observations conducted on males belonging to different plumage categories over the course of the three field seasons of the study. The bin size is one week. 
-```{r Seasonality Figure, include = TRUE}
+#' 
+#' 
+#' ## Figure S1
+#' Histograms of the number of observations conducted on males belonging to different plumage categories over the course of the three field seasons of the study. The bin size is one week. 
+## ----Seasonality Figure, include = TRUE----------------------------------------------------------------------------------
 boundary_dates <- c("20160601", "20170601", "20180601", 
                     "20160701", "20170701", "20180701", 
                     "20160801", "20170801", "20180801")
@@ -694,16 +693,16 @@ figure_s1 <- RBFW %>%
                      limits = c(21, 32))
 
 figure_s1
-```
 
-```{r Saving Seasonality Figure}
-ggsave(paste0(output_file_path, "/Figure_S1.pdf"), plot = figure_s1)
-```
+#' 
+## ----Saving Seasonality Figure-------------------------------------------------------------------------------------------
+ggsave(paste0(output_file_path, "Figure_S1.pdf"), plot = figure_s1)
 
-
-## Figure S2
-a. Proportion of colour-banded males observed in each plumage category during the three years of the study. A single male can be represented in multiple plumage categories within a year if he was observed moulting into ornamented plumage. b. Proportion of behavioural observations each year conducted on the three plumage categories.
-```{r Year plot, include = TRUE}
+#' 
+#' 
+#' ## Figure S2
+#' a. Proportion of colour-banded males observed in each plumage category during the three years of the study. A single male can be represented in multiple plumage categories within a year if he was observed moulting into ornamented plumage. b. Proportion of behavioural observations each year conducted on the three plumage categories.
+## ----Year plot, include = TRUE-------------------------------------------------------------------------------------------
 year_unique_males <- RBFW %>%
   mutate(Bird_ID_plumage = paste(Bird_ID, Plumage_group, sep = "")) %>%
   group_by(Year) %>%
@@ -765,18 +764,18 @@ figure_s2_b <- RBFW %>%
 figure_s2 <- ggarrange(figure_s2_a, figure_s2_b, ncol=2, nrow=1, 
                        common.legend = TRUE, legend="bottom")
 figure_s2
-```
 
-```{r Saving Year plot}
+#' 
+## ----Saving Year plot----------------------------------------------------------------------------------------------------
 ggsave(paste0(output_file_path, "/Figure_S2.pdf"), figure_s2, height = 4.5, width = 7.5)
-```
 
-## Figure S3
-Timeline of focal males included in 5-minute behavioural observations. A male observed in all three years of the study would be presented as a horizontal line across the entire x-axis. The lines are coloured to represent the number of plumage categories that a particular male was observed in during focal behavioural observations. The portion of a line that is shaded does not reflect the date that a male transitioned between plumage categories nor the proportion of observations in which he was observed in a particular plumage category. 
-
-##### Bookmark 29 September 2022 #####
-I need to clean this code up  
-```{r Timeline Figure, include = TRUE}
+#' 
+#' ## Figure S3
+#' Timeline of focal males included in 5-minute behavioural observations. A male observed in all three years of the study would be presented as a horizontal line across the entire x-axis. The lines are coloured to represent the number of plumage categories that a particular male was observed in during focal behavioural observations. The portion of a line that is shaded does not reflect the date that a male transitioned between plumage categories nor the proportion of observations in which he was observed in a particular plumage category. 
+#' 
+#' ##### Bookmark 29 September 2022 #####
+#' I need to clean this code up  
+## ----Timeline Figure-----------------------------------------------------------------------------------------------------
 heat_map_df <- RBFW %>%
   count(Bird_ID, Year, Plumage_group) %>%
   mutate(across(c(Bird_ID, Plumage_group), ~ as.character(.x)), 
@@ -898,16 +897,16 @@ figure_s3 <- timeline_df %>%
   scale_x_continuous(breaks = c(2016, 2017, 2018) + 0.5, labels = c(2016, 2017, 2018))
 
 figure_s3
-```
 
-
-```{r Saving figure S3, include = FALSE}
+#' 
+#' 
+## ----Saving figure S3, include = FALSE-----------------------------------------------------------------------------------
 ggsave(paste0(output_file_path, "/Figure_S3.pdf"), plot = figure_s3, width = 4, height = 12)
-```
 
-## Figure S4 
-Histograms showing the distribution of the proportion of time focal males spent engaged in allopreening, chasing, courtship, preening, and vocalizing. 
-```{r Histogram of proportion of behaviors, include = TRUE}
+#' 
+#' ## Figure S4 
+#' Histograms showing the distribution of the proportion of time focal males spent engaged in allopreening, chasing, courtship, preening, and vocalizing. 
+## ----Histogram of proportion of behaviors--------------------------------------------------------------------------------
 
 figure_s4 <- RBFW %>% 
   select(Plumage_group, Allopreening_prop, Chasing_prop, Courtship_prop, Preening_prop, Vocalizing_prop) %>%
@@ -927,17 +926,18 @@ figure_s4 <- RBFW %>%
   labs(x = "Proportion of Observation with Behaviour", y = "Number of Observations") + 
   theme(panel.background = element_rect(fill = NA, color = "black"))
 
+
 figure_s4 
-```
 
-```{r Saving figure S4, include = FALSE}
+#' 
+## ----Saving figure S4, include = FALSE-----------------------------------------------------------------------------------
 ggsave(paste0(output_file_path, "/Figure_S4.pdf"), plot = figure_s4)
-```
 
-
-## Figure S5
-The average proportion of focal observations in which a male was observed engaging in the five behaviours of interest. Error bars show 95% confidence intervals.
-```{r Proportion of all observations containing focal behaviors, include = TRUE}
+#' 
+#' 
+#' ## Figure S5
+#' The average proportion of focal observations in which a male was observed engaging in the five behaviours of interest. Error bars show 95% confidence intervals.
+## ----Proportion of all observations containing focal behaviors-----------------------------------------------------------
 figure_s5 <- behaviour_plumage_summary_error_df %>% 
   mutate(behaviour = str_sub(behaviour, start = 1, end = -5)) %>% 
   ggplot(aes(x = Plumage_group, y = mean, fill = Plumage_group)) + 
@@ -952,16 +952,16 @@ figure_s5 <- behaviour_plumage_summary_error_df %>%
   theme(axis.text.x = element_text(size = 8))
 
 figure_s5
-```
 
-```{r Saving figure s5, include = FALSE}
+#' 
+## ----Saving figure s5, include = FALSE-----------------------------------------------------------------------------------
 ggsave(paste0(output_file_path, "/Figure_S5.pdf"), plot = figure_s5, width = 7, height = 5)
-```
 
-## Figure S6
-Heat map representing the proportion of opportunistic observations on allopreening, chasing, and courtship that were between RBFW females and the three male plumage categories. For chasing and courtship, a sender (e.g., the RBFW chasing another or giving a courtship display) and receiver are identified. For allopreening (mutual grooming), it was not possible to assign a sender and receiver, so each of the interacting RBFWs was arbitrarily assigned either “Bird A” or “Bird B” and the order of the categories in the heat map is not meaningful.
-
-```{r Heat map, include = TRUE}
+#' 
+#' ## Figure S6
+#' Heat map representing the proportion of opportunistic observations on allopreening, chasing, and courtship that were between RBFW females and the three male plumage categories. For chasing and courtship, a sender (e.g., the RBFW chasing another or giving a courtship display) and receiver are identified. For allopreening (mutual grooming), it was not possible to assign a sender and receiver, so each of the interacting RBFWs was arbitrarily assigned either “Bird A” or “Bird B” and the order of the categories in the heat map is not meaningful.
+#' 
+## ----Heat map, include = TRUE--------------------------------------------------------------------------------------------
 # Adding more general categories (combining plumage category and sex)
 RBFW_sup <- RBFW_sup %>%
   mutate(Sender_category = ifelse(Sender_sex == "M", paste(Sender_plumage_category, "male"), "Female"), 
@@ -1057,11 +1057,9 @@ mylegend <- g_legend(allopreening_figure + theme(legend.position = "right"))
 
 figure_s6 <- ggarrange(allopreening_figure, chasing_figure, courtship_figure, mylegend,  ncol=2, nrow = 2)
 
-figure_s6 
-```
-
-
-```{r Saving figure S6}
+#' 
+#' 
+## ----Saving figure S6----------------------------------------------------------------------------------------------------
 ggsave(paste0(output_file_path, "/Figure_S6.pdf"), figure_s6, height = 7, width = 7)
-```
 
+#' 
