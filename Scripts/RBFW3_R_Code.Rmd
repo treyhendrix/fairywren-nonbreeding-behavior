@@ -4,7 +4,7 @@ title: R Code for Behavioural differences between ornamented and unornamented ma
 author: "Trey C. Hendrix"
 date: "Updated on 15 February 2023"
 output: 
-  html_document:
+  rmarkdown::github_document:
     toc: true
     toc_depth: 2
 ---
@@ -961,7 +961,7 @@ ggsave(paste0(output_file_path, "/Figure_S5.pdf"), plot = figure_s5, width = 7, 
 ## Figure S6
 Heat map representing the proportion of opportunistic observations on allopreening, chasing, and courtship that were between RBFW females and the three male plumage categories. For chasing and courtship, a sender (e.g., the RBFW chasing another or giving a courtship display) and receiver are identified. For allopreening (mutual grooming), it was not possible to assign a sender and receiver, so each of the interacting RBFWs was arbitrarily assigned either “Bird A” or “Bird B” and the order of the categories in the heat map is not meaningful.
 
-```{r Heat map, include = TRUEe}
+```{r Heat map, include = TRUE}
 # Adding more general categories (combining plumage category and sex)
 RBFW_sup <- RBFW_sup %>%
   mutate(Sender_category = ifelse(Sender_sex == "M", paste(Sender_plumage_category, "male"), "Female"), 
