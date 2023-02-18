@@ -1,0 +1,1065 @@
+#' ---
+#' title: R Code for Behavioural differences between ornamented and unornamented male
+#'   Red-backed Fairywrens (*Malurus melanocephalus*) in the nonbreeding season
+#' author: "Trey C. Hendrix"
+#' date: "Updated on 15 February 2023"
+#' output: 
+#'   rmarkdown::github_document:
+#'     toc: true
+#'     toc_depth: 2
+#' ---
+#' 
+#' This document contains the R code used to produce the analyses, figures, and supplemental material for the article submitted to *Emu* entitled "Behavioural differences between ornamented and unornamented male Red-backed Fairywrens (*Malurus melanocephalus*) in the nonbreeding season". The complete list of authors is: Trey C. Hendrix, Facundo Fernandez-Duque, Sarah Toner, Lauren G. Hitt, Robin G. Thady, Megan Massa, Samantha J. Hagler, Margaux Armfield, Nathalie Clarke, Phoebe Honscheid, Sarah Khalil, Carly E. Hawkins, Samantha M. Lantz, Joseph F. Welklin, John P. Swaddle, Michael S. Webster, and Jordan Karubian.
+#' 
+## ----setup, include = FALSE, warning = FALSE, message = FALSE------------------------------------------------------------
+knitr::opts_chunk$set(
+  echo = TRUE,
+  message = FALSE,
+  warning = FALSE,
+  include = FALSE
+)
+
+#' 
+#' 
+#' # Required Packages
+## ----Packages, include = TRUE--------------------------------------------------------------------------------------------
+library(readr)
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+library(purrr)
+library(lme4)
+library(MuMIn)
+library(broom.mixed)
+library(lubridate)
+library(stringr)
+library(knitr)
+library(DHARMa)
+library(gridExtra)
+library(ggpubr)
+library(lemon)
+
+#' 
+#' This document was created using: 
+## ----Version, include = TRUE---------------------------------------------------------------------------------------------
+sessionInfo()
+
+#' 
+#' # Data
+#' This manuscript uses two datasets: (1) focal behavioural observations, which is a file named "RBFW3_Anon_Data_210720.csv" and (2) opportunistic behavioural observations, which is a file named "RBFW3_Anon_Opportunistic_Data_230116.csv"
+#' 
+#' Both datasets have been uploads to Figshare using the following DOI links: 
+#' 
+#' * Focal data: [https://doi.org/10.6084/m9.figshare.15088014](https://doi.org/10.6084/m9.figshare.15088014).
+#' * Opportunistic data: [https://doi.org/10.6084/m9.figshare.21790187](https://doi.org/10.6084/m9.figshare.21790187)
+#' 
+#' They are also available in the [fairywren-nonbreeding-behavior](https://github.com/treyhendrix/fairywren-nonbreeding-behavior) GitHub repository in the "Data" folder. The contents of these datasets are detailed in the descriptions on Figshare and in a metadata file in the GitHub repository. 
+#' 
+#' The majority of our analyses focus on the focal observational data, which is simply referred to as "RBFW" in the following code. The opportunistic behavioural data is used for generate supplementary figures and tables and is referred to as "RBFW_sup" in code. 
+## ----Data Paths----------------------------------------------------------------------------------------------------------
+working_directory <- getwd()
+project_file_path <- str_remove(working_directory, pattern = fixed("/Scripts")) # This code might need to be modified on your machine to produce the correct file path
+
+file_path_to_focal_data <- paste0(project_file_path, "/Data/RBFW3_Anon_Data_210720.csv")
+
+file_path_to_opp_data <- paste0(project_file_path, "/Data/RBFW3_Anon_Opportunistic_Data_230116.csv")
+
+#' 
+## ----Focal dataframe structure, include = TRUE---------------------------------------------------------------------------
+RBFW <- read_csv(file_path_to_focal_data)
+glimpse(RBFW)
+
+#' 
+## ----Opportunistic dataframe structure, include = TRUE-------------------------------------------------------------------
+RBFW_sup <- read_csv(file_path_to_opp_data)
+glimpse(RBFW_sup)
+
+#' 
+#' # Logistic Mixed-effects Models 
+#' In our analysis, we use logistic mixed-effects models with a binomial distribution and logit link to determine which factors (plumage category, age, and day of year) predict whether or not a behaviour of interest (allopreening, chasing, courtship, preening, and vocalizing) was observed during a focal behavioural observation.
+#' 
+#' The general format of these models (in the notation of the lme4 package) is: 
+#' 
+#' *Behaviour of interest observed (1 or 0) ~ Plumage category + Year + Age + Day of year + (1|Observer) + (1|Bird ID)*
+#' 
+#' ## Preparing Data for Logistic Mixed-Effects Models
+#' First, it is necessary to add binary variables to our dataset for our behaviours of interest:
+## ----Binary, include = TRUE----------------------------------------------------------------------------------------------
+binaryifier <- function(var){
+  ifelse(var > 0, 1, 0)
+}
+
+variables_of_interest <- c("Courtship_prop", "Vocalizing_prop", 
+                           "Allopreening_prop", "Preening_prop", 
+                           "Chasing_prop")
+
+RBFW_bin <- RBFW %>%
+  mutate_at(.vars = variables_of_interest , 
+            .funs = binaryifier) %>%
+  rename_at(.vars = variables_of_interest , 
+            .funs = list(~gsub("prop", "bin", .))) %>% 
+  select(Observation_ID, contains("bin"))
+
+RBFW <- RBFW %>%
+  left_join(RBFW_bin, by = "Observation_ID")
+
+#' 
+#' All numeric variables (e.g., age and day of year) in models will be standardized as shown below:
+## ----Standardizing Terms, include = TRUE---------------------------------------------------------------------------------
+standardizer <- function(x){
+  y <- (x - mean(x))/sd(x)
+  return(y)
+}
+
+RBFW <- RBFW %>% 
+  mutate(Age_st = standardizer(Age), 
+         Day_of_year_st = standardizer(Day_of_year))
+
+#' 
+#' The plumage category and year variables are made to be factors. For plumage category, DULL is set to be the reference category: 
+## ----Making categorical variables factors, include = TRUE----------------------------------------------------------------
+RBFW <- RBFW %>% 
+  mutate(Plumage_group = factor(Plumage_group, levels = c("DULL", "MOULT", "BRIGHT")),
+         Year = factor(Year))
+
+#' 
+#' Additionally, since courtship was only observed in BRIGHT individuals, it is necessary to compare DULL and MOULTING males together to BRIGHT males (rather than comparing DULL to MOULT and DULL to BRIGHT) to allow for a non-zero estimate of variance in the courtship model.
+## ----Plumage adjustment, include = TRUE----------------------------------------------------------------------------------
+RBFW <- RBFW %>%
+  mutate(Plumage_group_combined = ifelse(Plumage_group == "BRIGHT", 
+                                         "BRIGHT", "DULL + MOULT"),
+         Plumage_group_combined = factor(Plumage_group_combined, 
+                                         levels = c("DULL + MOULT", "BRIGHT")))
+
+#' 
+#' 
+#' ## Logistic Mixed-effects Models
+#' Here, we create a function to produce the models described above:
+## ----Model function, include = TRUE--------------------------------------------------------------------------------------
+# Formatting for graphs
+theme_simple <- theme(panel.grid.major = element_blank(), 
+                      panel.grid.minor = element_blank(),
+                      panel.background = element_blank(), 
+                      axis.line = element_line(colour = "black"), 
+                      plot.title = element_text(hjust = 0))
+
+class_colors <- c("navajowhite2", "orange2", "firebrick")
+rain_color <- "cyan4"
+  
+# Fixed Effects 
+general_fixed_effects <- paste("Plumage_group", "Year", 
+                               "Age_st", "Day_of_year_st", 
+                               sep = " + ")
+court_fixed_effects <- paste("Plumage_group_combined", "Year", 
+                             "Age_st", "Day_of_year_st", 
+                             sep = " + ")
+
+# Modeling Function
+logistic_modeler <- function(dv, iv, df = RBFW){
+  
+  formula <- paste(dv, "~", iv, 
+                   "+ (1| Observer) + (1 | Bird_ID)", 
+                   collapse = " ") %>% 
+    as.formula()
+  
+  model <- glmer(formula, data = df, family = "binomial",
+                 control=glmerControl(optimizer="bobyqa", 
+                                      optCtrl=list(maxfun=2e5)))
+  
+  visualization <- model %>%
+    tidy() %>%
+    filter(effect == "fixed") %>%
+    filter(!(term %in% c("(Intercept)", 
+                         "sd_(Intercept).Bird_ID", 
+                         "sd_(Intercept).Observer"))) %>%
+    mutate(lower = estimate - 1.96*std.error,
+           upper = estimate + 1.96*std.error) %>%
+    mutate(term = case_when(term == "Plumage_groupMOULT" ~ 
+                              "Plumage group MOULT",
+                            term == "Plumage_groupBRIGHT" ~ 
+                              "Plumage group BRIGHT",
+                            term == "Year2017" ~ 
+                              "Year 2017",
+                            term == "Year2018" ~ 
+                              "Year 2018", 
+                            term == "Age_st" ~ 
+                              "Age",
+                            term == "Day_of_year_st" ~ 
+                              "Day of year",
+                            term == "Plumage_group_combinedBRIGHT" ~ 
+                              "Plumage group BRIGHT*"))  %>% 
+    ggplot(aes(x = estimate, y = term)) + 
+    geom_point() + 
+    geom_linerange(aes(xmin = lower, xmax = upper)) + 
+    theme_bw() +
+    theme(plot.title = element_text(hjust = 0.5)) +
+    labs(x = "Model Estimate", y = "Fixed Effect") + 
+    geom_vline(xintercept = 0, lty = 2, color = "red") + 
+    ggtitle(str_remove(dv, fixed("_bin")))
+  
+  results <- list(summary(model), visualization)
+  
+  list <- list(model, results)
+  
+  return(list)
+}
+
+#' 
+#' Applying this function to our variables of interest, produces the following results: 
+## ----Model Results, include = TRUE---------------------------------------------------------------------------------------
+logistic_modeler("Allopreening_bin", general_fixed_effects)
+allo_model <- logistic_modeler("Allopreening_bin", 
+                               general_fixed_effects)[[1]]
+
+logistic_modeler("Courtship_bin", court_fixed_effects)
+court_model <- logistic_modeler("Courtship_bin", 
+                                court_fixed_effects)[[1]]
+
+logistic_modeler("Chasing_bin", general_fixed_effects)
+chase_model <- logistic_modeler("Chasing_bin", 
+                                general_fixed_effects)[[1]]
+
+logistic_modeler("Preening_bin", general_fixed_effects)
+preen_model <- logistic_modeler("Preening_bin", 
+                                general_fixed_effects)[[1]]
+
+logistic_modeler("Vocalizing_bin", general_fixed_effects)
+voc_model <- logistic_modeler("Vocalizing_bin", 
+                              general_fixed_effects)[[1]]
+
+#' 
+#' 
+#' ## Table 1
+#' Logistic mixed-effects models predicting the occurrence of each behaviour of interest. Each model contained plumage category, year, age, and day of year as fixed effects and the identity of the focal male and observer as random effects. 
+## ----Model table, include = TRUE-----------------------------------------------------------------------------------------
+null_model_comparer <- function(model, dv, df = RBFW){
+  
+  # Null model 
+  null_formula <- paste(dv, "~", "1 + (1| Observer) + (1 | Bird_ID)", 
+                        collapse = " ") %>% 
+    as.formula()
+  
+  null_model <- glmer(null_formula, data = df, family = "binomial", 
+                      control = glmerControl(optimizer="bobyqa", 
+                                             optCtrl=list(maxfun=2e5)))
+  null_loglik <- logLik(null_model)
+  
+  # Making dataframe
+  model_output <- AICc(model)
+  model_df <- tibble(Response_variable = dv, 
+                     Formula = "Plumage_group + Year + Age_st + Day_of_year_st",
+                     AICc = model_output, 
+                     Pseudo_R2 = as.numeric(1 - logLik(model)/null_loglik))
+  
+  # ANOVA
+  anova_df <- anova(model, null_model) %>%
+    tidy() %>%
+    filter(term == "model") %>% 
+    select(statistic, df, p.value)
+  
+  final_df <- model_df %>% bind_cols(anova_df) 
+  
+  
+  return(final_df)
+}
+
+
+# List of models 
+models <- list(allo_model, chase_model, 
+               court_model, preen_model, 
+               voc_model)
+
+
+# List of response variables 
+variables_of_interest_bin <- list("Allopreening_bin", "Chasing_bin", 
+                                  "Courtship_bin", "Preening_bin", 
+                                  "Vocalizing_bin")
+
+
+anova_models <- map2(models, variables_of_interest_bin, 
+                     null_model_comparer) %>% 
+  bind_rows() %>% 
+  select(Response_variable, Formula, 
+         everything())
+
+
+table_1 <- anova_models %>%
+  select(Response_variable, statistic, 
+         df, p.value, 
+         Pseudo_R2) %>%
+  mutate(statistic = round(statistic, 3), 
+         Pseudo_R2 = round(Pseudo_R2, 3),
+         p.value = round(p.value, 3))
+
+table_1 %>%
+  kable()
+
+#' 
+## ----Saving table 1------------------------------------------------------------------------------------------------------
+# Exporting table for the manuscript, further cosmetic changes (formatting) were made in Microsoft Word 
+output_file_path <- paste0(project_file_path, "/Output")
+
+write_csv(table_1, paste0(output_file_path, "Table_1.csv"))
+
+#' 
+#' 
+#' ## Figure 1
+#' The average proportion of focal observations in which a male was observed engaging in courtship (a) and allopreening (c). Error bars show 95% confidence intervals. b and d. Model estimates from the logistic mixed-effects models with courtship (b) and allopreening (d) as the response variables. Error bars show 95% confidence intervals. Confidence intervals that do not overlap zero are bolded. 
+## ----Major results figure, include = TRUE--------------------------------------------------------------------------------
+std_error <- function(x){
+  
+  sd(x)/sqrt(length(x))
+}
+
+summarizer_by_group <- function(group, var){
+  RBFW %>% 
+    select(c(group, var)) %>%
+    group_by(!!sym(group)) %>%
+    summarize_all(funs(mean, std_error)) %>%
+    mutate(behaviour = var) %>%
+    ungroup()
+}
+
+behaviour_plumage_summary_error_df <- lapply(as.list(c("Allopreening_bin", 
+                                                       "Courtship_bin", 
+                                                       "Preening_bin", 
+                                                       "Vocalizing_bin", 
+                                                       "Chasing_bin")), 
+                                             function(x){
+                                               
+                                               summarizer_by_group(group = 
+                                                                     "Plumage_group", 
+                                                                   var = x)
+                                             }) %>% 
+  bind_rows() %>%
+  mutate(lower = mean - 1.96*std_error,
+         upper = mean + 1.96*std_error)
+
+
+barplot_boundaries <- scale_y_continuous(breaks = seq(0, 0.25, 0.05), 
+                                         limits = c(-0.025, 0.257))
+axis_text_small <- theme(axis.text = element_text(size = 7))
+axis_label_medium <- theme(axis.title = element_text(size = 10))
+title_adjustment <- theme(plot.title = element_text(hjust = -0.31))
+model_plot_boundaries <- scale_x_continuous(breaks = seq(-5, 7.5, 2.5), 
+                                            limits = c(-5.25, 7.55))
+
+allo_freq_plot  <- behaviour_plumage_summary_error_df %>% 
+  filter(behaviour == "Allopreening_bin") %>%
+  ggplot(aes(x = Plumage_group, y = mean, fill = Plumage_group)) + 
+  geom_col(position = "dodge") + 
+  geom_errorbar(aes(ymin = lower, ymax = upper), width = 0.5) + 
+  scale_fill_manual(values = class_colors) + 
+  theme_simple + 
+  theme(legend.position = "none") + 
+  labs(x = "Plumage Group", 
+       y = "Prop. of Observations \n with Allopreening") +
+  ggtitle("c.") + 
+  barplot_boundaries + 
+  axis_label_medium + 
+  axis_text_small + 
+  theme(plot.title = element_text(hjust = -0.26)) + 
+  scale_x_discrete(labels = c("Unornamented", "Moulting", "Ornamented"))
+
+court_freq_plot <- behaviour_plumage_summary_error_df %>% 
+  filter(behaviour == "Courtship_bin") %>%
+  ggplot(aes(x = Plumage_group, y = mean, fill = Plumage_group)) + 
+  geom_col(position = "dodge") + 
+  geom_errorbar(aes(ymin = lower, ymax = upper), width = 0.5) + 
+  scale_fill_manual(values = class_colors) + 
+  theme_simple + 
+  theme(legend.position = "none") + 
+  labs(x = "Plumage Group", y = "Prop. of Observations \n with Courtship") +
+  ggtitle("a.") + 
+  barplot_boundaries + 
+  axis_text_small +
+  axis_label_medium + 
+  theme(plot.title = element_text(hjust = -0.26)) + 
+  scale_x_discrete(labels = c("Unornamented", "Moulting", "Ornamented"))
+
+label_bolder <- function(labels, labels_to_bold) {
+  if (!is.factor(labels)) labels <- factor(labels)              
+  labels_levels <- levels(labels)                               
+  to_bold <- labels_to_bold %in% labels_levels
+  if (all(to_bold)) {
+    b_position <- purrr::map_int(labels_to_bold, ~which(.==labels_levels)) 
+    b_vector <- rep("plain", length(labels_levels))               
+    b_vector[b_position] <- "bold"                                  
+    b_vector
+  }
+}
+
+
+visualize_allo <- function(model, y_label, title, bold_terms){
+  df <- model %>%
+    tidy() %>%
+    filter(!(term %in% "(Intercept)")) %>%
+    filter(str_detect(term, pattern = fixed("sd_"), negate = TRUE)) %>% 
+    mutate(lower = estimate - 1.96*std.error,
+           upper = estimate + 1.96*std.error) %>%
+    mutate(term = case_when(term == "Plumage_groupMOULT" ~ 
+                              "Plumage Moulting",
+                            term == "Plumage_groupBRIGHT" ~ 
+                              "Plumage Ornamented",
+                            term == "Year2017" ~ 
+                              "Year 2017",
+                            term == "Year2018" ~ 
+                              "Year 2018", 
+                            term == "Age_st" ~ 
+                              "Age",
+                            term == "Day_of_year_st" ~ 
+                              "Day of year",
+                            term == "Plumage_group_combinedBRIGHT" ~ 
+                              "Plumage Ornamented*"))  %>% 
+    mutate(term = factor(term, levels = rev(c("Plumage Ornamented", "Plumage Moulting", 
+                                              "Year 2017", "Year 2018", 
+                                              "Age", "Day of year"))))
+  
+  df %>% 
+    ggplot(aes(x = estimate, y = term)) + 
+    geom_point() + 
+    geom_linerange(aes(xmin = lower, xmax = upper)) + 
+    theme_simple +
+    labs(x = "Model Estimate", y = y_label) + 
+    geom_vline(xintercept = 0, lty = 2, color = "red") + 
+    ggtitle(title) + 
+    theme(axis.text.y = element_text(face = label_bolder(df$term, 
+                                                         bold_terms))) + 
+    axis_text_small + 
+    axis_label_medium + 
+    title_adjustment
+}
+
+visualize_court <- function(model, y_label, title, bold_terms){
+  df <- model %>%
+    tidy() %>%
+    filter(!(term %in% "(Intercept)")) %>%
+    filter(str_detect(term, pattern = fixed("sd_"), negate = TRUE)) %>%
+    mutate(lower = estimate - 1.96*std.error,
+           upper = estimate + 1.96*std.error) %>%
+    mutate(term = case_when(term == "Plumage_groupMOULT" ~ 
+                              "Plumage Moulting",
+                            term == "Plumage_groupBRIGHT" ~ 
+                              "Plumage Ornamented",
+                            term == "Year2017" ~ 
+                              "Year 2017",
+                            term == "Year2018" ~ 
+                              "Year 2018", 
+                            term == "Age_st" ~ 
+                              "Age",
+                            term == "Day_of_year_st" ~ 
+                              "Day of year",
+                            term == "Plumage_group_combinedBRIGHT" ~ 
+                              "Plumage Ornamented*"))  %>% 
+    mutate(term = factor(term, levels = rev(c("Plumage Ornamented*", "Year 2017", 
+                                              "Year 2018", "Age", 
+                                              "Day of year"))))
+  
+  df %>% 
+    ggplot(aes(x = estimate, y = term)) + 
+    geom_point() + 
+    geom_linerange(aes(xmin = lower, xmax = upper)) + 
+    theme_simple +
+    labs(x = "Model Estimate", y = y_label) + 
+    geom_vline(xintercept = 0, lty = 2, color = "red") + 
+    ggtitle(title) + 
+    theme(axis.text.y = element_text(face = label_bolder(df$term, bold_terms))) + 
+    axis_text_small + 
+    axis_label_medium + 
+    title_adjustment
+}
+
+allo_model_plot <- visualize_allo(allo_model, "Fixed Effects", 
+                                  "d.", "Plumage Ornamented") + 
+  model_plot_boundaries
+
+court_model_plot <- visualize_court(court_model, "Fixed Effects", 
+                                    "b.", "Plumage Ornamented*") + 
+  model_plot_boundaries
+
+
+# Combining Plots into a grid 
+grid_poportion_and_model_plots <- grid.arrange(court_freq_plot, 
+                                               court_model_plot,
+                                               allo_freq_plot,
+                                               allo_model_plot, 
+                                               nrow = 2, 
+                                               heights = c(10, 10), 
+                                               widths = c(15, 20))
+
+#' 
+## ----Saving Figure 1-----------------------------------------------------------------------------------------------------
+ggsave(paste0(output_file_path, "/Figure_1.jpeg"), dpi = 300, grid_poportion_and_model_plots)
+
+#' 
+#' ## Reproducing Statistics Reported in Text
+## ----Text results, include = TRUE----------------------------------------------------------------------------------------
+term_remover <- function(old_model, variable_to_remove){
+  
+  new_model <- update(old_model, as.formula(paste(".~.-", 
+                                                  variable_to_remove)))
+  return(new_model)
+  
+}
+
+# Allopreening Model LRT
+allo_model_nopl <- term_remover(allo_model, "Plumage_group")
+anova(allo_model_nopl, allo_model, test = "LRT")
+
+# Allopreening Wald Z
+allo_model %>%
+  tidy() %>%
+  filter(term == "Plumage_groupBRIGHT")
+
+
+# Courtship Model LRT
+court_model_nopl <- term_remover(court_model, "Plumage_group_combined")
+anova(court_model_nopl, court_model)
+
+
+# Number of observations of allopreening and courtship mentioned in the results 
+RBFW %>% 
+  group_by(Plumage_group) %>%
+  summarize(Number_of_observations = n(), 
+            Courtship_observations = sum(Courtship_bin == 1), 
+            Allopreening_observations = sum(Allopreening_bin == 1))
+
+
+# Rate of courtship displays mentioned in discussion 
+RBFW %>% 
+  group_by(Plumage_group) %>%
+  summarize(display_rate = mean(Courtship_prop))
+
+
+#' 
+#' 
+#' 
+#' ## Assessing Model Fit Using the DHARMa Package
+## ----Interrogator function with plot labels, include = TRUE--------------------------------------------------------------
+# Creating a unique time variable to be able to look at temporal autocorrelation
+RBFW_unique_times_df <- RBFW %>% 
+  arrange(Date, Time) %>% 
+  mutate(unique_relative_time = 1:nrow(.)) %>% 
+  select(Observation_ID, unique_relative_time)
+
+RBFW <- RBFW %>%
+  left_join(RBFW_unique_times_df, by = "Observation_ID")
+
+
+model_fit_vizualizer <- function(model, fixed_effects, df, label){
+  
+  # Extracting variable name
+  variable_name <- str_extract(as.character(model@call)[2], 
+                               "^[A-Z]{1}[a-z]+")
+  plot_label <- paste(variable_name, label, sep = " ")
+  
+  # Running simulation
+  sim <- simulateResiduals(fittedModel = model, plot = T, n = 1000)
+  title(sub = plot_label, col.sub = "darkgreen")
+  
+  # General histogram
+  hist(sim)
+  title(sub = plot_label, col.sub = "darkgreen")
+  
+  # Plotting against predictors
+  lapply(as.list(str_split(fixed_effects, pattern = fixed(" + "), 
+                           simplify = TRUE)), 
+         function(x){
+           predictor <- unlist(df[, x])
+           
+           if(x == "Age_st"){
+             predictor <- round(predictor, 3)
+           }
+           
+           boxplot(sim$scaledResiduals ~ predictor, 
+                   xlab = "Predictor", 
+                   ylab = "Scaled Residuals")
+           title(x, sub = plot_label,
+                 col.main = "darkgreen",
+                 col.sub = "darkgreen")
+         })
+  
+  # Goodness-of-fit tests
+  testResiduals(sim)
+  title(sub = plot_label, col.sub = "darkgreen")
+  testZeroInflation(sim)
+  title(sub = plot_label, col.sub = "darkgreen")
+  testTemporalAutocorrelation(sim, df$unique_relative_time)
+  title(sub = plot_label, col.sub = "darkgreen")
+}
+
+#' 
+## ----Assessing model fit, include = TRUE---------------------------------------------------------------------------------
+#### Bookmark 3 October 2022 ####
+# Return here and uncomment this when the document is ready to be reviewed/finalized (this chunk takes many minutes to run)
+
+# lapply(models[-3], function(x){
+#   model_fit_vizualizer(x, "Plumage_group + Year + Age_st", RBFW, label = "Model Fit")
+# })
+# 
+# model_fit_vizualizer(models[[3]], "Plumage_group_combined + Year + Age_st", 
+#                      RBFW, label = "Model Fit")
+
+#' 
+#' # Supplemental Material 
+#' #### Bookmark 10 February 2023 ####
+#' Add description of Supplemental data on Figshare, explain that Table S1 is just an ethogram, and verify that figures are labeled correctly
+#' 
+#' ## Table S1
+#' Description of behavioural categories used during focal observations.
+#' 
+#' This table includes only qualitative descriptions of behaviours and was generated entirely in Microsoft Word.
+#' 
+#' ## Table S2
+#' Proportion of the opportunistically observed interactions in which a dyad of RBFWs were (2) each other’s first (in the case of repairing) social mate in the breeding season after the nonbreeding season in which they were observed, (2) members of the same breeding group during the breeding season preceding the nonbreeding season in which the interaction occurred, (3) two males that were in different breeding groups during the previous breeding season, and (4) a male and female that were neither social mates during the following breeding season nor members of the same breeding group during the preceding breeding season. The numbers in parentheses report the number of observations of a particular behaviour in which complete information for both interacting birds with respect to the previously described social relationships were known. 
+#' 
+#' 
+## ----Table S2, include = TRUE--------------------------------------------------------------------------------------------
+# Adding and defining additional social contexts to opportunistic data
+RBFW_sup <- RBFW_sup %>% 
+  mutate(Male_male = case_when(Sender_sex == "M" & Receiver_sex == "M" ~ 1, 
+                               is.na(Sender_sex) | is.na(Receiver_sex) ~ NA_real_,
+                               TRUE ~ 0), 
+         Male_female = case_when(Sender_sex == "M" & Receiver_sex == "M" ~ 0,
+                                 Sender_sex == "F" & Receiver_sex == "F" ~ 0,
+                                 is.na(Sender_sex) | is.na(Receiver_sex) ~ NA_real_,
+                                 TRUE ~ 1), 
+         Female_female = case_when(Sender_sex == "F" & Receiver_sex == "F" ~ 1, 
+                                   is.na(Sender_sex) | is.na(Receiver_sex) ~ NA_real_,
+                                   TRUE ~ 0), 
+         Extra_group_males = case_when(Male_male == 1 & Prev_breeding_group == 0 ~ 1, 
+                                       is.na(Male_male) | is.na(Prev_breeding_group) ~ NA_real_, 
+                                       TRUE ~ 0), 
+         Potential_extra_pair_mates = case_when(Male_female == 1 & Social_mate == 0 & Prev_breeding_group == 0 ~ 1, 
+                                                is.na(Male_female) | is.na(Social_mate) | is.na(Prev_breeding_group) ~ NA_real_,
+                                                TRUE ~ 0))
+
+# Function for printing percent and sample size e.g., 45% (90 of 200)
+percent_sample_size_calculator <- function(x){
+  Sample_size <- sum((!is.na(x)))
+  Sum <- sum(x, na.rm = TRUE)
+  Percent <- round(Sum/Sample_size*100, 0)
+  z <- paste(Percent, "%", " (", Sum, " of ", Sample_size, ")", sep = "")
+  return(z)
+}
+
+table_s2 <- RBFW_sup %>%
+  group_by(Behavior) %>%
+  summarize(across(c(Social_mate, Prev_breeding_group, Extra_group_males, Potential_extra_pair_mates), percent_sample_size_calculator))
+
+table_s2 %>% 
+  kable()
+
+#' 
+## ----Saving Table S2-----------------------------------------------------------------------------------------------------
+write_csv(table_s2, paste0(output_file_path, "/Table_S2.csv"))
+
+#' 
+#' 
+#' ## Figure S1
+#' Histograms of the number of observations conducted on males belonging to different plumage categories over the course of the three field seasons of the study. The bin size is one week. 
+## ----Seasonality Figure, include = TRUE----------------------------------------------------------------------------------
+boundary_dates <- c("20160601", "20170601", "20180601", 
+                    "20160701", "20170701", "20180701", 
+                    "20160801", "20170801", "20180801")
+date_breaks <- tibble(dates = ymd(boundary_dates), 
+                      year = year(dates), 
+                      week = week(dates), 
+                      month = month(dates, label = TRUE)) %>%
+  group_by(month) %>%
+  summarize(values = mean(week)) %>% pull(values)
+
+figure_s1 <- RBFW %>% 
+  mutate(Plumage_group = case_when(Plumage_group == "DULL" ~ "Unornamented", 
+                                   Plumage_group == "MOULT" ~ "Moulting", 
+                                   Plumage_group == "BRIGHT" ~ "Ornamented"),
+         Plumage_group = factor(Plumage_group, 
+                                levels = c("Unornamented", "Moulting", "Ornamented"))) %>%
+  mutate(Year = year(Date), 
+         Week = week(Date)) %>%
+  select(Plumage_group, Year, Week) %>%
+  group_by(Plumage_group,Year, Week) %>%
+  summarize(n = n()) %>%
+  ungroup() %>%
+  ggplot(aes(x = Week, y = n, fill = Plumage_group)) + 
+  geom_col() + 
+  facet_wrap(Plumage_group ~Year) + 
+  scale_fill_manual(values = class_colors) + 
+  theme_bw() +
+  theme(legend.position = "none") + 
+  ylab("Number of Observations") + 
+  xlab("Date") + 
+  scale_x_continuous(breaks = date_breaks, labels = c("Jun", "Jul", "Aug"), 
+                     limits = c(21, 32))
+
+figure_s1
+
+#' 
+## ----Saving Seasonality Figure-------------------------------------------------------------------------------------------
+ggsave(paste0(output_file_path, "Figure_S1.pdf"), plot = figure_s1)
+
+#' 
+#' 
+#' ## Figure S2
+#' a. Proportion of colour-banded males observed in each plumage category during the three years of the study. A single male can be represented in multiple plumage categories within a year if he was observed moulting into ornamented plumage. b. Proportion of behavioural observations each year conducted on the three plumage categories.
+## ----Year plot, include = TRUE-------------------------------------------------------------------------------------------
+year_unique_males <- RBFW %>%
+  mutate(Bird_ID_plumage = paste(Bird_ID, Plumage_group, sep = "")) %>%
+  group_by(Year) %>%
+  summarize(Sample_size = length(unique(Bird_ID_plumage)))
+
+
+figure_s2_a <- RBFW %>%
+  mutate(Plumage_group = case_when(Plumage_group == "DULL" ~ "Unornamented", 
+                                   Plumage_group == "MOULT" ~ "Moulting", 
+                                   Plumage_group == "BRIGHT" ~ "Ornamented"), 
+         Plumage_group = factor(Plumage_group, 
+                                levels = c("Unornamented", "Moulting", "Ornamented"))) %>% 
+  left_join(year_unique_males, by = "Year") %>%
+  group_by(Year, Plumage_group, Bird_ID, Sample_size) %>% 
+  summarize(n = n()) %>%
+  ungroup() %>%
+  group_by(Year, Plumage_group, Sample_size) %>%
+  summarize(n = n()) %>% 
+  ungroup() %>%
+  mutate(Proportion = n/Sample_size) %>%
+  ggplot(aes(x = Year, y = Proportion, fill = Plumage_group)) + 
+  geom_col(position = "dodge", color = "black") + 
+  scale_fill_manual(values = class_colors, name = "") +
+  theme_simple + 
+  labs(y = "Proportion of Unique \n Males Observed", 
+       fill = "Plumage group") +
+  ggtitle("a.") + 
+  ylim(0, 1) + 
+  theme(plot.title = element_text(hjust = -0.24))
+
+
+year_sample_size <- RBFW %>%
+  group_by(Year) %>%
+  summarize(Sample_size = n())
+
+
+figure_s2_b <- RBFW %>%
+  mutate(Plumage_group = case_when(Plumage_group == "DULL" ~ "Unornamented", 
+                                   Plumage_group == "MOULT" ~ "Moulting", 
+                                   Plumage_group == "BRIGHT" ~ "Ornamented"), 
+         Plumage_group = factor(Plumage_group, 
+                                levels = c("Unornamented", "Moulting", "Ornamented"))) %>% 
+  left_join(year_sample_size, by = "Year") %>%
+  group_by(Year, Plumage_group, Sample_size) %>%
+  summarize(Year_sum = n()) %>%
+  ungroup() %>%
+  mutate(Proportion = Year_sum/Sample_size) %>%
+  ggplot(aes(x = Year, y = Proportion, 
+             fill = Plumage_group)) + 
+  geom_col(position = "dodge", color = "black") + 
+  theme_simple + 
+  scale_fill_manual(values = class_colors, name = "") + 
+  labs(y = "Proportion of Observations", fill = "") +
+  ggtitle("b.") + 
+  ylim(0, 1) + 
+  theme(plot.title = element_text(hjust = -0.17))
+
+
+figure_s2 <- ggarrange(figure_s2_a, figure_s2_b, ncol=2, nrow=1, 
+                       common.legend = TRUE, legend="bottom")
+figure_s2
+
+#' 
+## ----Saving Year plot----------------------------------------------------------------------------------------------------
+ggsave(paste0(output_file_path, "/Figure_S2.pdf"), figure_s2, height = 4.5, width = 7.5)
+
+#' 
+#' ## Figure S3
+#' Timeline of focal males included in 5-minute behavioural observations. A male observed in all three years of the study would be presented as a horizontal line across the entire x-axis. The lines are coloured to represent the number of plumage categories that a particular male was observed in during focal behavioural observations. The portion of a line that is shaded does not reflect the date that a male transitioned between plumage categories nor the proportion of observations in which he was observed in a particular plumage category. 
+#' 
+#' ##### Bookmark 29 September 2022 #####
+#' I need to clean this code up  
+## ----Timeline Figure-----------------------------------------------------------------------------------------------------
+heat_map_df <- RBFW %>%
+  count(Bird_ID, Year, Plumage_group) %>%
+  mutate(across(c(Bird_ID, Plumage_group), ~ as.character(.x)), 
+         Year = as.numeric(as.character(Year))) %>%
+  #select(-n) %>%
+  pivot_wider(names_from = Plumage_group, values_from = n) %>%
+  mutate(across(DULL:MOULT, ~ifelse(is.na(.x), 0, 1)),
+         DMB = paste0(DULL, MOULT, BRIGHT)) 
+
+heat_map_list <- heat_map_df %>%
+  mutate(unique = row.names(.)) %>%
+  split(.$unique) 
+
+timeline_df_maker <- function(x){
+  
+  year = x$Year
+  
+  if(x$DMB %in% c("100", "010", "001")){
+    new_df <- data.frame(Bird_ID = x$Bird_ID, Year = year, Start = year, End = year + 1, DMB = x$DMB)
+    
+    if(x$DMB == "100"){
+      new_df$Color <- "Unornamented"
+    }
+    
+    if(x$DMB == "010"){
+      new_df$Color <- "Moulting"
+    }
+    
+    if(x$DMB == "001"){
+      new_df$Color <- "Ornamented"
+    }
+    
+  }
+  
+  if(x$DMB %in% c("110", "011", "101")){
+    
+    new_df <- data.frame(Bird_ID = x$Bird_ID, Year = year, Start = c(year, year + 0.5), End = c(year + 0.5, year + 1), DMB = x$DMB)
+    
+    if(x$DMB == "110"){
+      new_df$Color <- c("Unornamented", "Moulting")
+    }
+    
+    if(x$DMB == "011"){
+      new_df$Color <- c("Moulting", "Ornamented")
+    }
+    
+    if(x$DMB == "101"){
+      new_df$Color <- c("Unornamented", "Ornamented")
+    }
+    
+  }
+  
+  if(x$DMB == "111"){
+    
+    new_df <- data.frame(Bird_ID = x$Bird_ID, Year = year, Start = c(year, year + 1/3, year + 2/3), End = c(year + 1/3, year + 2/3, year + 1), Color = c("Unornamented", "Moulting", "Ornamented"), DMB = x$DMB)
+    
+  }
+  
+  return(new_df)
+}
+
+timeline_df <- lapply(heat_map_list, timeline_df_maker) %>% bind_rows()
+
+
+# Sorting based on length of row
+sort_score_1_df <- timeline_df %>%
+  count(Bird_ID, Year) %>%
+  pivot_wider(names_from = Year, values_from = n, values_fill = 0, names_prefix = "Y") %>%
+  ungroup() %>%
+  group_by(Bird_ID) %>%
+  summarize(Sort_score_1 = case_when(Y2016 > 0 && Y2017 == 0 && Y2018 == 0 ~ 700, 
+                                     Y2016 > 0 && Y2017 > 0 && Y2018 == 0 ~ 600,
+                                     Y2016 == 0 && Y2017 > 0 && Y2018 == 0 ~ 500,
+                                     Y2016 == 0 && Y2017 > 0 && Y2018 > 0 ~ 400,
+                                     Y2016 == 0 && Y2017 == 0 && Y2018 > 0 ~ 300,
+                                     Y2016 > 0 && Y2017 > 0 && Y2018 > 0 ~ 100,
+                                     Y2016 > 0 && Y2017 == 0 && Y2018 > 0 ~ 200,
+                                     TRUE ~ NA_real_)) %>%
+  ungroup() %>%
+  select(Bird_ID, Sort_score_1)
+
+sort_score_2_df <- timeline_df %>%
+  select(Bird_ID, Year, DMB) %>%
+  unique() %>%
+  mutate(Plumage_diversity_score = case_when(DMB == "100" ~ 7,
+                                             DMB == "010" ~ 6,
+                                             DMB == "001" ~ 5,
+                                             DMB == "110" ~ 4,
+                                             DMB == "011" ~ 3, 
+                                             DMB == "101" ~ 2, 
+                                             DMB == "111" ~ 1, 
+                                             TRUE ~ NA_real_)) %>%
+  group_by(Bird_ID) %>%
+  summarize(Sort_score_2 = sum(Plumage_diversity_score)) %>%
+  ungroup()
+
+
+sorted_birds <- sort_score_1_df %>%
+  left_join(sort_score_2_df, by = "Bird_ID") %>%
+  mutate(Sort_score = Sort_score_1 + Sort_score_2) %>%
+  arrange(Sort_score) %>%
+  pull(Bird_ID) %>%
+  unique()
+
+
+
+figure_s3 <- timeline_df %>%
+  mutate(Bird_ID = factor(Bird_ID, levels = sorted_birds), 
+         Color = factor(Color, levels = c("Unornamented", "Moulting", "Ornamented"))) %>%
+  ggplot(aes(x = Year, y = Bird_ID)) + 
+  geom_segment(aes(x = Start, xend = End, color = Color, yend = Bird_ID)) + 
+  scale_color_manual(values = c("navajowhite2", "orange2", "firebrick")) + 
+  theme_simple + 
+  theme(axis.text.y = element_blank(), 
+        axis.ticks.y = element_blank(), 
+        legend.position = "top", 
+        legend.text = element_text(size = 8)) + 
+  labs(y = "Focal Bird", color = "") + 
+  scale_x_continuous(breaks = c(2016, 2017, 2018) + 0.5, labels = c(2016, 2017, 2018))
+
+figure_s3
+
+#' 
+#' 
+## ----Saving figure S3, include = FALSE-----------------------------------------------------------------------------------
+ggsave(paste0(output_file_path, "/Figure_S3.pdf"), plot = figure_s3, width = 4, height = 12)
+
+#' 
+#' ## Figure S4 
+#' Histograms showing the distribution of the proportion of time focal males spent engaged in allopreening, chasing, courtship, preening, and vocalizing. 
+## ----Histogram of proportion of behaviors--------------------------------------------------------------------------------
+
+figure_s4 <- RBFW %>% 
+  select(Plumage_group, Allopreening_prop, Chasing_prop, Courtship_prop, Preening_prop, Vocalizing_prop) %>%
+  pivot_longer(cols = ends_with("prop"), names_to = "Behavior", values_to = "Proportion") %>%
+  mutate(Plumage_group = case_when(Plumage_group == "DULL" ~ "Unornamented", 
+                                   Plumage_group == "MOULT" ~ "Moulting", 
+                                   Plumage_group == "BRIGHT" ~ "Ornamented"),
+         Plumage_group = factor(Plumage_group, 
+                                levels = c("Unornamented", "Moulting", "Ornamented"))) %>%
+  mutate(Behavior = str_sub(Behavior, start = 1, end = -5)) %>%
+  ggplot(aes(x = Proportion, fill = Plumage_group)) + 
+  geom_histogram(bins = 30) + 
+  theme_simple + 
+  facet_grid(Plumage_group ~ Behavior, scales = "free") + 
+  scale_fill_manual(values = class_colors) + 
+  theme(legend.position = "None") + 
+  labs(x = "Proportion of Observation with Behaviour", y = "Number of Observations") + 
+  theme(panel.background = element_rect(fill = NA, color = "black"))
+
+
+figure_s4 
+
+#' 
+## ----Saving figure S4, include = FALSE-----------------------------------------------------------------------------------
+ggsave(paste0(output_file_path, "/Figure_S4.pdf"), plot = figure_s4)
+
+#' 
+#' 
+#' ## Figure S5
+#' The average proportion of focal observations in which a male was observed engaging in the five behaviours of interest. Error bars show 95% confidence intervals.
+## ----Proportion of all observations containing focal behaviors-----------------------------------------------------------
+figure_s5 <- behaviour_plumage_summary_error_df %>% 
+  mutate(behaviour = str_sub(behaviour, start = 1, end = -5)) %>% 
+  ggplot(aes(x = Plumage_group, y = mean, fill = Plumage_group)) + 
+  geom_col(position = "dodge") + 
+  geom_errorbar(aes(ymin = lower, ymax = upper), width = 0.5) + 
+  scale_fill_manual(values = class_colors) + 
+  theme_simple + 
+  theme(legend.position = "none") + 
+  labs(x = "Plumage Group", y = "Proportion of Observations with Behaviour") +
+  facet_wrap(~ behaviour) + 
+  scale_x_discrete(labels = c("Unornamented", "Moulting", "Ornamented")) +
+  theme(axis.text.x = element_text(size = 8))
+
+figure_s5
+
+#' 
+## ----Saving figure s5, include = FALSE-----------------------------------------------------------------------------------
+ggsave(paste0(output_file_path, "/Figure_S5.pdf"), plot = figure_s5, width = 7, height = 5)
+
+#' 
+#' ## Figure S6
+#' Heat map representing the proportion of opportunistic observations on allopreening, chasing, and courtship that were between RBFW females and the three male plumage categories. For chasing and courtship, a sender (e.g., the RBFW chasing another or giving a courtship display) and receiver are identified. For allopreening (mutual grooming), it was not possible to assign a sender and receiver, so each of the interacting RBFWs was arbitrarily assigned either “Bird A” or “Bird B” and the order of the categories in the heat map is not meaningful.
+#' 
+## ----Heat map, include = TRUE--------------------------------------------------------------------------------------------
+# Adding more general categories (combining plumage category and sex)
+RBFW_sup <- RBFW_sup %>%
+  mutate(Sender_category = ifelse(Sender_sex == "M", paste(Sender_plumage_category, "male"), "Female"), 
+         Receiver_category = ifelse(Receiver_sex == "M", paste(Receiver_plumage_category, "male"), "Female"))
+
+plumage_figure_df <- RBFW_sup %>%
+  select(Behavior, Sender_category, Receiver_category) %>%
+  filter(complete.cases(.)) %>% # Filter out NA values
+  count(Behavior, Sender_category, Receiver_category) %>%
+  pivot_wider(names_from = Receiver_category, values_from = n) %>% 
+  mutate(across(where(is.numeric), ~ ifelse(is.na(.x), 0, .x))) %>%
+  mutate(Row_sum = Female + `Moulting male` + `Ornamented male` + `Unornamented male`) %>%
+  ungroup() %>%
+  group_by(Behavior) %>%
+  mutate(Behavior_sum = sum(Row_sum)) %>%
+  ungroup() %>%
+  select(-Row_sum) %>%
+  mutate(across(c("Female", "Moulting male", "Ornamented male", "Unornamented male"), ~ .x/Behavior_sum)) %>%
+  select(-Behavior_sum) %>%
+  pivot_longer(Female:`Unornamented male`, names_to = "Receiver_category", values_to = "Percent_observations")
+
+# Modifed theme
+s6_theme <- theme_simple + 
+  theme(legend.position = "none", 
+        axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1, size = 8), 
+        axis.text.y = element_text(size = 8), 
+        plot.title = element_text(hjust = 0.5))
+
+gradient_scale <- scale_fill_gradient(low = "#ffffff", high = "#7e2704", limits = c(0, max(plumage_figure_df$Percent_observations)))
+
+# Chasing Figure
+chasing_figure <- plumage_figure_df %>%
+  filter(Behavior == "Chasing") %>%
+  mutate(across(c(Sender_category, Receiver_category), ~ factor(.x, levels = c("Female", "Unornamented male", "Moulting male", "Ornamented male")))) %>%
+  ggplot(aes(x = Sender_category, y = Receiver_category, fill = Percent_observations)) + 
+  geom_tile(color = "black") + 
+  s6_theme + 
+  gradient_scale + 
+  labs(x = "Sender", y = "Receiver") + 
+  ggtitle("Chasing")
+
+# Courtship Figure
+courtship_figure <- plumage_figure_df %>%
+  mutate(across(c(Sender_category, Receiver_category), ~ factor(.x, levels = c("Female", "Unornamented male", "Moulting male", "Ornamented male")))) %>% 
+  mutate(Percent_observations = ifelse(Behavior == "Allopreening", 0, Percent_observations), 
+         Behavior = ifelse(Behavior == "Allopreening", "Courtship", Behavior)) %>% # adding in 0 values for missing ones
+  filter(Behavior == "Courtship") %>%
+  group_by(Behavior, Sender_category, Receiver_category) %>%
+  summarize(Percent_observations = sum(Percent_observations)) %>%
+  ungroup() %>%
+  ggplot(aes(x = Sender_category, y = Receiver_category, fill = Percent_observations)) + 
+  geom_tile(color = "black") + 
+  s6_theme + 
+  gradient_scale + 
+  labs(x = "Sender", y = "Receiver") + 
+  ggtitle("Courtship")
+
+# Allopreening figure
+allo_matrix <- plumage_figure_df %>%
+  filter(Behavior == "Allopreening") %>%
+  mutate(across(c(Sender_category, Receiver_category), ~ factor(.x, levels = c("Female", "Unornamented male", "Moulting male", "Ornamented male")))) %>%
+  select(-Behavior) %>%
+  pivot_wider(names_from = Receiver_category, values_from = Percent_observations) %>%
+  arrange(Sender_category) %>%
+  select(Sender_category, Female, `Unornamented male`, `Moulting male`, `Ornamented male`) %>%
+  as.matrix()
+
+rownames(allo_matrix) <- allo_matrix[,1]
+allo_matrix <- allo_matrix[,-1]
+class(allo_matrix) <- "numeric"
+
+# Matrix for inserting NA values 
+null_matrix <- upper.tri(allo_matrix, diag = TRUE)
+null_matrix[null_matrix == 0] <- NA_integer_
+
+allo_matrix_final <- (allo_matrix + t(allo_matrix))*null_matrix
+class(allo_matrix_final) <- "numeric"
+
+allopreening_figure <- data.frame(allo_matrix_final) %>%
+  mutate(Sender_category = rownames(.)) %>%
+  pivot_longer(Female:`Ornamented.male`, names_to = "Receiver_category", values_to = "Percent_observations") %>%
+  mutate(Receiver_category = str_replace_all(Receiver_category, fixed("."), " ")) %>%
+  mutate(across(c(Sender_category, Receiver_category), ~ factor(.x, levels = c("Female", "Unornamented male", "Moulting male", "Ornamented male")))) %>% 
+  ggplot(aes(x = Sender_category, y = Receiver_category, fill = Percent_observations)) + 
+  geom_tile(color = "black") + 
+  gradient_scale +
+  s6_theme + 
+  labs(x = "Bird A", y = "Bird B", fill = "Percent of Observations", color = "No data") + 
+  ggtitle("Allopreening") 
+
+
+mylegend <- g_legend(allopreening_figure + theme(legend.position = "right"))
+
+figure_s6 <- ggarrange(allopreening_figure, chasing_figure, courtship_figure, mylegend,  ncol=2, nrow = 2)
+
+#' 
+#' 
+## ----Saving figure S6----------------------------------------------------------------------------------------------------
+ggsave(paste0(output_file_path, "/Figure_S6.pdf"), figure_s6, height = 7, width = 7)
+
+#' 
