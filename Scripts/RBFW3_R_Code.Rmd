@@ -613,6 +613,14 @@ This table includes only qualitative descriptions of behaviours and was generate
 ## Table S2
 Proportion of the opportunistically observed interactions in which a dyad of RBFWs were (2) each other’s first (in the case of repairing) social mate in the breeding season after the nonbreeding season in which they were observed, (2) members of the same breeding group during the breeding season preceding the nonbreeding season in which the interaction occurred, (3) two males that were in different breeding groups during the previous breeding season, and (4) a male and female that were neither social mates during the following breeding season nor members of the same breeding group during the preceding breeding season. The numbers in parentheses report the number of observations of a particular behaviour in which complete information for both interacting birds with respect to the previously described social relationships were known. 
 
+\* Please note that the version of Table S2 produced by the code below differs slightly from Table S2 in the Word document accessed by the DOI provided above. Specifically, due to an error in our data that we noticed after we submitted the Word document of supplemental material to *Emu* (but before we finalized our R code) a single observation of courtship is now excluded from Table S2. This changed the last row of the table slightly in the following way (from left to right): 
+
+* 19% (29 of 154) became 19% (29 of 153)
+* 11% (17 of 152) became 11% (16 of 151)
+* 16% (24 of 152) became 16% (24 of 151)
+* 62% (89 of 144) became 62% (89 of 143)
+
+Since the percentages below were not affected (nor were the qualitative conclusions drawn from this table), we did not update the Microsoft Word document containing the supplemental material submitted to *Emu*. We apologize for this error. 
 
 ```{r Table S2, include = TRUE}
 # Adding and defining additional social contexts to opportunistic data

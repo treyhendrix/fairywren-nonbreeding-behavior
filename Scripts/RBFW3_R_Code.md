@@ -36,14 +36,16 @@ Updated on 15 February 2023
   - <a href="#figure-s6" id="toc-figure-s6">Figure S6</a>
 
 This document contains the R code used to produce the analyses, figures,
-and supplemental material for the article submitted to *Emu* entitled
-“Behavioural differences between ornamented and unornamented male
-Red-backed Fairywrens (*Malurus melanocephalus*) in the nonbreeding
-season”. The complete list of authors is: Trey C. Hendrix, Facundo
-Fernandez-Duque, Sarah Toner, Lauren G. Hitt, Robin G. Thady, Megan
-Massa, Samantha J. Hagler, Margaux Armfield, Nathalie Clarke, Phoebe
-Honscheid, Sarah Khalil, Carly E. Hawkins, Samantha M. Lantz, Joseph F.
-Welklin, John P. Swaddle, Michael S. Webster, and Jordan Karubian.
+and supplemental material for the article published in *Emu - Austral
+Ornithology* entitled “Behavioural differences between ornamented and
+unornamented male Red-backed Fairywrens (*Malurus melanocephalus*) in
+the nonbreeding season”. The complete list of authors is: Trey C.
+Hendrix, Facundo Fernandez-Duque, Sarah Toner, Lauren G. Hitt, Robin G.
+Thady, Megan Massa, Samantha J. Hagler, Margaux Armfield, Nathalie
+Clarke, Phoebe Honscheid, Sarah Khalil, Carly E. Hawkins, Samantha M.
+Lantz, Joseph F. Welklin, John P. Swaddle, Michael S. Webster, and
+Jordan Karubian. The DOI for the journal article is:
+[10.1080/01584197.2023.2182224](http://dx.doi.org/10.1080/01584197.2023.2182224)
 
 # Required Packages
 
@@ -1183,10 +1185,10 @@ model_fit_vizualizer <- function(model, fixed_effects, df, label){
 
 # Supplemental Material
 
-#### Bookmark 10 February 2023
-
-Add description of Supplemental data on Figshare, explain that Table S1
-is just an ethogram, and verify that figures are labeled correctly
+The following analyses are included in a Microsoft Word document as
+Supplemental Material for the manuscript. This document can be accessed
+via the following DOI link:
+<https://doi.org/10.6084/m9.figshare.15088137>
 
 ## Table S1
 
