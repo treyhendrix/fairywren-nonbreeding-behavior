@@ -14,7 +14,7 @@ The contents of these two data sets are further detailed below:
 **Columns Describing Observations and Focal Male Characteristics:** 
 <p>Observation_ID = unique identifier for each behavourial observation (or row)<br>
 Date = The date the observation was conducted in YYYY-MM-DD format<br>
-Year = The year the observation was conducted. <br>
+Year = The year the observation was conducted<br>
 Time = The time that the observation started in 24-hour format<br>
 Bird_ID = A unique identifier for each focal male (equivalent to color band combinations) <br>
 Observer = Identity of the research who collected the data<br>
@@ -24,7 +24,7 @@ Plumage_group = Categories of plumage scores (DULL, MOULT, or BRIGHT) as per Kar
 Age = Age of each focal male obtained through banding records<br>
 Age_exact = Either "exact" if we were able to determine a bird's precise age or "minimum" if only a minimum estimate (e.g., after second year) was possible</p>
 
-**Behavioural Variables: **
+**Behavioural Variables:**
 <p>The variables Alarm_calling, Allopreening, Calling, Chasing, Chipping, Courtship, Flying, Foraging, Other, Preening, Scolding, Singing, Sitting, U, and Vocalizing) provide the number of seconds during a focal observation in which a male was engaging in these behaviours. These behaviors are described in table S1 (an ethogram). Note that U in the dataset is equivalent to "Out of sight" in table S1. During some years of our study, certain behaviours were not considered. In these situations, these values are given as "NA" rather than an integer. In particular, only vocalizing (any vocalization other than alarm calling) was recorded in 2016 while more specific categories of vocalizations (e.g., calling chipping, scolding, and singing) were reported in 2017 and 2018.</p> 
 
 <p>Observation_time = Duration of a focal observation in seconds</p>
