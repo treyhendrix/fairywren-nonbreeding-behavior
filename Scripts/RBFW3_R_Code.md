@@ -1,9 +1,9 @@
-R Code for Behavioural differences between ornamented and unornamented
+R Code for “Behavioural differences between ornamented and unornamented
 male Red-backed Fairywrens (*Malurus melanocephalus*) in the nonbreeding
-season
+season”
 ================
 Trey C. Hendrix
-Updated on 15 February 2023
+Updated on 19 February 2023
 
 - <a href="#required-packages" id="toc-required-packages">Required
   Packages</a>
@@ -1213,6 +1213,24 @@ particular behaviour in which complete information for both interacting
 birds with respect to the previously described social relationships were
 known.
 
+\* Please note that the version of Table S2 produced by the code below
+differs slightly from Table S2 in the Word document accessed by the DOI
+provided above. Specifically, due to an error in our data that we
+noticed after we submitted the Word document of supplemental material to
+*Emu* (but before we finalized our R code) a single observation of
+courtship is now excluded from Table S2. This changed the last row of
+the table slightly in the following way (from left to right):
+
+- 19% (29 of 154) became 19% (29 of 153)
+- 11% (17 of 152) became 11% (16 of 151)
+- 16% (24 of 152) became 16% (24 of 151)
+- 62% (89 of 144) became 62% (89 of 143)
+
+Since the percentages below were not affected (nor were the qualitative
+conclusions drawn from this table), we did not update the Microsoft Word
+document containing the supplemental material submitted to *Emu*. We
+apologize for this error.
+
 ``` r
 # Adding and defining additional social contexts to opportunistic data
 RBFW_sup <- RBFW_sup %>% 
@@ -1387,11 +1405,8 @@ that is shaded does not reflect the date that a male transitioned
 between plumage categories nor the proportion of observations in which
 he was observed in a particular plumage category.
 
-##### Bookmark 29 September 2022
-
-I need to clean this code up
-
 ``` r
+# Summarize how many plumage groups each bird was observed in for each year of the study
 heat_map_df <- RBFW %>%
   count(Bird_ID, Year, Plumage_group) %>%
   mutate(across(c(Bird_ID, Plumage_group), ~ as.character(.x)), 
@@ -1405,6 +1420,7 @@ heat_map_list <- heat_map_df %>%
   mutate(unique = row.names(.)) %>%
   split(.$unique) 
 
+# This function takes each row from heat_map_df (a single bird in a single year of the study) and transforms it into a new data frame where each row represents a single colored segment in the timeline visualization
 timeline_df_maker <- function(x){
   
   year = x$Year
@@ -1488,15 +1504,12 @@ sort_score_2_df <- timeline_df %>%
   summarize(Sort_score_2 = sum(Plumage_diversity_score)) %>%
   ungroup()
 
-
 sorted_birds <- sort_score_1_df %>%
   left_join(sort_score_2_df, by = "Bird_ID") %>%
   mutate(Sort_score = Sort_score_1 + Sort_score_2) %>%
   arrange(Sort_score) %>%
   pull(Bird_ID) %>%
   unique()
-
-
 
 figure_s3 <- timeline_df %>%
   mutate(Bird_ID = factor(Bird_ID, levels = sorted_birds), 
