@@ -123,19 +123,19 @@ behavioural observations, which is a file named
 Both datasets have been uploads to Figshare using the following DOI
 links:
 
-- Focal data: <https://doi.org/10.6084/m9.figshare.15088014>.
+- Focal data: <https://doi.org/10.6084/m9.figshare.15088014>
 - Opportunistic data: <https://doi.org/10.6084/m9.figshare.21790187>
 
 They are also available in the
 [fairywren-nonbreeding-behavior](https://github.com/treyhendrix/fairywren-nonbreeding-behavior)
 GitHub repository in the “Data” folder. The contents of these datasets
-are detailed in the descriptions on Figshare and in a metadata file in
-the GitHub repository.
+are detailed in the descriptions on Figshare and in a metadata/README
+file in the “Data” folder of the GitHub repository.
 
-The majority of our analyses focus on the focal observational data,
-which is simply referred to as “RBFW” in the following code. The
-opportunistic behavioural data is used for generate supplementary
-figures and tables and is referred to as “RBFW_sup” in code.
+The majority of our analyses use the focal behavioural data, which is
+simply referred to as “RBFW” in the following code. The opportunistic
+behavioural data is used for generate supplementary figures and tables
+and is referred to as “RBFW_sup” in code.
 
 ``` r
 RBFW <- read_csv(file_path_to_focal_data)
@@ -1172,16 +1172,201 @@ model_fit_vizualizer <- function(model, fixed_effects, df, label){
 ```
 
 ``` r
-#### Bookmark 3 October 2022 ####
-# Return here and uncomment this when the document is ready to be reviewed/finalized (this chunk takes many minutes to run)
-
-# lapply(models[-3], function(x){
-#   model_fit_vizualizer(x, "Plumage_group + Year + Age_st", RBFW, label = "Model Fit")
-# })
-# 
-# model_fit_vizualizer(models[[3]], "Plumage_group_combined + Year + Age_st", 
-#                      RBFW, label = "Model Fit")
+lapply(models[-3], function(x){
+  model_fit_vizualizer(x, "Plumage_group + Year + Age_st", RBFW, label = "Model Fit")
+})
 ```
+
+![](RBFW3_R_Code_figures_for_markdown/Assessing%20model%20fit-1.png)<!-- -->![](RBFW3_R_Code_figures_for_markdown/Assessing%20model%20fit-2.png)<!-- -->![](RBFW3_R_Code_figures_for_markdown/Assessing%20model%20fit-3.png)<!-- -->![](RBFW3_R_Code_figures_for_markdown/Assessing%20model%20fit-4.png)<!-- -->![](RBFW3_R_Code_figures_for_markdown/Assessing%20model%20fit-5.png)<!-- -->![](RBFW3_R_Code_figures_for_markdown/Assessing%20model%20fit-6.png)<!-- -->![](RBFW3_R_Code_figures_for_markdown/Assessing%20model%20fit-7.png)<!-- -->
+
+    ## $uniformity
+    ## 
+    ##  Asymptotic one-sample Kolmogorov-Smirnov test
+    ## 
+    ## data:  simulationOutput$scaledResiduals
+    ## D = 0.036695, p-value = 0.7031
+    ## alternative hypothesis: two-sided
+    ## 
+    ## 
+    ## $dispersion
+    ## 
+    ##  DHARMa nonparametric dispersion test via sd of residuals fitted vs.
+    ##  simulated
+    ## 
+    ## data:  simulationOutput
+    ## dispersion = 1.0079, p-value = 0.924
+    ## alternative hypothesis: two.sided
+    ## 
+    ## 
+    ## $outliers
+    ## 
+    ##  DHARMa bootstrapped outlier test
+    ## 
+    ## data:  simulationOutput
+    ## outliers at both margin(s) = 0, observations = 369, p-value = 1
+    ## alternative hypothesis: two.sided
+    ##  percent confidence interval:
+    ##  0 0
+    ## sample estimates:
+    ## outlier frequency (expected: 0 ) 
+    ##                                0
+
+![](RBFW3_R_Code_figures_for_markdown/Assessing%20model%20fit-8.png)<!-- -->![](RBFW3_R_Code_figures_for_markdown/Assessing%20model%20fit-9.png)<!-- -->![](RBFW3_R_Code_figures_for_markdown/Assessing%20model%20fit-10.png)<!-- -->![](RBFW3_R_Code_figures_for_markdown/Assessing%20model%20fit-11.png)<!-- -->![](RBFW3_R_Code_figures_for_markdown/Assessing%20model%20fit-12.png)<!-- -->![](RBFW3_R_Code_figures_for_markdown/Assessing%20model%20fit-13.png)<!-- -->![](RBFW3_R_Code_figures_for_markdown/Assessing%20model%20fit-14.png)<!-- -->![](RBFW3_R_Code_figures_for_markdown/Assessing%20model%20fit-15.png)<!-- -->![](RBFW3_R_Code_figures_for_markdown/Assessing%20model%20fit-16.png)<!-- -->
+
+    ## $uniformity
+    ## 
+    ##  Asymptotic one-sample Kolmogorov-Smirnov test
+    ## 
+    ## data:  simulationOutput$scaledResiduals
+    ## D = 0.079665, p-value = 0.01849
+    ## alternative hypothesis: two-sided
+    ## 
+    ## 
+    ## $dispersion
+    ## 
+    ##  DHARMa nonparametric dispersion test via sd of residuals fitted vs.
+    ##  simulated
+    ## 
+    ## data:  simulationOutput
+    ## dispersion = 0.67161, p-value = 0.212
+    ## alternative hypothesis: two.sided
+    ## 
+    ## 
+    ## $outliers
+    ## 
+    ##  DHARMa bootstrapped outlier test
+    ## 
+    ## data:  simulationOutput
+    ## outliers at both margin(s) = 0, observations = 369, p-value = 1
+    ## alternative hypothesis: two.sided
+    ##  percent confidence interval:
+    ##  0 0
+    ## sample estimates:
+    ## outlier frequency (expected: 0 ) 
+    ##                                0
+
+![](RBFW3_R_Code_figures_for_markdown/Assessing%20model%20fit-17.png)<!-- -->![](RBFW3_R_Code_figures_for_markdown/Assessing%20model%20fit-18.png)<!-- -->![](RBFW3_R_Code_figures_for_markdown/Assessing%20model%20fit-19.png)<!-- -->![](RBFW3_R_Code_figures_for_markdown/Assessing%20model%20fit-20.png)<!-- -->![](RBFW3_R_Code_figures_for_markdown/Assessing%20model%20fit-21.png)<!-- -->![](RBFW3_R_Code_figures_for_markdown/Assessing%20model%20fit-22.png)<!-- -->![](RBFW3_R_Code_figures_for_markdown/Assessing%20model%20fit-23.png)<!-- -->![](RBFW3_R_Code_figures_for_markdown/Assessing%20model%20fit-24.png)<!-- -->![](RBFW3_R_Code_figures_for_markdown/Assessing%20model%20fit-25.png)<!-- -->
+
+    ## $uniformity
+    ## 
+    ##  Asymptotic one-sample Kolmogorov-Smirnov test
+    ## 
+    ## data:  simulationOutput$scaledResiduals
+    ## D = 0.033372, p-value = 0.8057
+    ## alternative hypothesis: two-sided
+    ## 
+    ## 
+    ## $dispersion
+    ## 
+    ##  DHARMa nonparametric dispersion test via sd of residuals fitted vs.
+    ##  simulated
+    ## 
+    ## data:  simulationOutput
+    ## dispersion = 1.0086, p-value = 0.82
+    ## alternative hypothesis: two.sided
+    ## 
+    ## 
+    ## $outliers
+    ## 
+    ##  DHARMa bootstrapped outlier test
+    ## 
+    ## data:  simulationOutput
+    ## outliers at both margin(s) = 0, observations = 369, p-value = 1
+    ## alternative hypothesis: two.sided
+    ##  percent confidence interval:
+    ##  0 0
+    ## sample estimates:
+    ## outlier frequency (expected: 0 ) 
+    ##                                0
+
+![](RBFW3_R_Code_figures_for_markdown/Assessing%20model%20fit-26.png)<!-- -->![](RBFW3_R_Code_figures_for_markdown/Assessing%20model%20fit-27.png)<!-- -->![](RBFW3_R_Code_figures_for_markdown/Assessing%20model%20fit-28.png)<!-- -->![](RBFW3_R_Code_figures_for_markdown/Assessing%20model%20fit-29.png)<!-- -->![](RBFW3_R_Code_figures_for_markdown/Assessing%20model%20fit-30.png)<!-- -->![](RBFW3_R_Code_figures_for_markdown/Assessing%20model%20fit-31.png)<!-- -->![](RBFW3_R_Code_figures_for_markdown/Assessing%20model%20fit-32.png)<!-- -->![](RBFW3_R_Code_figures_for_markdown/Assessing%20model%20fit-33.png)<!-- -->![](RBFW3_R_Code_figures_for_markdown/Assessing%20model%20fit-34.png)<!-- -->
+
+    ## $uniformity
+    ## 
+    ##  Asymptotic one-sample Kolmogorov-Smirnov test
+    ## 
+    ## data:  simulationOutput$scaledResiduals
+    ## D = 0.032157, p-value = 0.84
+    ## alternative hypothesis: two-sided
+    ## 
+    ## 
+    ## $dispersion
+    ## 
+    ##  DHARMa nonparametric dispersion test via sd of residuals fitted vs.
+    ##  simulated
+    ## 
+    ## data:  simulationOutput
+    ## dispersion = 1.0015, p-value = 0.96
+    ## alternative hypothesis: two.sided
+    ## 
+    ## 
+    ## $outliers
+    ## 
+    ##  DHARMa bootstrapped outlier test
+    ## 
+    ## data:  simulationOutput
+    ## outliers at both margin(s) = 0, observations = 369, p-value = 1
+    ## alternative hypothesis: two.sided
+    ##  percent confidence interval:
+    ##  0 0
+    ## sample estimates:
+    ## outlier frequency (expected: 0 ) 
+    ##                                0
+
+![](RBFW3_R_Code_figures_for_markdown/Assessing%20model%20fit-35.png)<!-- -->![](RBFW3_R_Code_figures_for_markdown/Assessing%20model%20fit-36.png)<!-- -->
+
+    ## [[1]]
+    ## NULL
+    ## 
+    ## [[2]]
+    ## NULL
+    ## 
+    ## [[3]]
+    ## NULL
+    ## 
+    ## [[4]]
+    ## NULL
+
+``` r
+model_fit_vizualizer(models[[3]], "Plumage_group_combined + Year + Age_st",
+                     RBFW, label = "Model Fit")
+```
+
+![](RBFW3_R_Code_figures_for_markdown/Assessing%20model%20fit-37.png)<!-- -->![](RBFW3_R_Code_figures_for_markdown/Assessing%20model%20fit-38.png)<!-- -->![](RBFW3_R_Code_figures_for_markdown/Assessing%20model%20fit-39.png)<!-- -->![](RBFW3_R_Code_figures_for_markdown/Assessing%20model%20fit-40.png)<!-- -->![](RBFW3_R_Code_figures_for_markdown/Assessing%20model%20fit-41.png)<!-- -->![](RBFW3_R_Code_figures_for_markdown/Assessing%20model%20fit-42.png)<!-- -->![](RBFW3_R_Code_figures_for_markdown/Assessing%20model%20fit-43.png)<!-- -->
+
+    ## $uniformity
+    ## 
+    ##  Asymptotic one-sample Kolmogorov-Smirnov test
+    ## 
+    ## data:  simulationOutput$scaledResiduals
+    ## D = 0.034455, p-value = 0.7734
+    ## alternative hypothesis: two-sided
+    ## 
+    ## 
+    ## $dispersion
+    ## 
+    ##  DHARMa nonparametric dispersion test via sd of residuals fitted vs.
+    ##  simulated
+    ## 
+    ## data:  simulationOutput
+    ## dispersion = 1.1856, p-value = 0.57
+    ## alternative hypothesis: two.sided
+    ## 
+    ## 
+    ## $outliers
+    ## 
+    ##  DHARMa bootstrapped outlier test
+    ## 
+    ## data:  simulationOutput
+    ## outliers at both margin(s) = 0, observations = 369, p-value = 1
+    ## alternative hypothesis: two.sided
+    ##  percent confidence interval:
+    ##  0.000000000 0.002710027
+    ## sample estimates:
+    ## outlier frequency (expected: 0.00024390243902439 ) 
+    ##                                                  0
+
+![](RBFW3_R_Code_figures_for_markdown/Assessing%20model%20fit-44.png)<!-- -->![](RBFW3_R_Code_figures_for_markdown/Assessing%20model%20fit-45.png)<!-- -->
 
 # Supplemental Material
 
@@ -1321,12 +1506,11 @@ figure_s1
 
 ## Figure S2
 
-1.  Proportion of colour-banded males observed in each plumage category
-    during the three years of the study. A single male can be
-    represented in multiple plumage categories within a year if he was
-    observed moulting into ornamented plumage. b. Proportion of
-    behavioural observations each year conducted on the three plumage
-    categories.
+a\. Proportion of colour-banded males observed in each plumage category
+during the three years of the study. A single male can be represented in
+multiple plumage categories within a year if he was observed moulting
+into ornamented plumage. b. Proportion of behavioural observations each
+year conducted on the three plumage categories.
 
 ``` r
 year_unique_males <- RBFW %>%
