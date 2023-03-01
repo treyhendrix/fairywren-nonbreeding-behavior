@@ -3,7 +3,7 @@ male Red-backed Fairywrens (*Malurus melanocephalus*) in the nonbreeding
 season”
 ================
 Trey C. Hendrix
-Updated on 19 February 2023
+Updated on 1 March 2023
 
 - <a href="#required-packages" id="toc-required-packages">Required
   Packages</a>
@@ -37,7 +37,7 @@ Updated on 19 February 2023
 
 This document contains the R code used to produce the analyses, figures,
 and supplemental material for the article published in *Emu - Austral
-Ornithology* entitled “Behavioural differences between ornamented and
+Ornithology* titled “Behavioural differences between ornamented and
 unornamented male Red-backed Fairywrens (*Malurus melanocephalus*) in
 the nonbreeding season”. The complete list of authors is: Trey C.
 Hendrix, Facundo Fernandez-Duque, Sarah Toner, Lauren G. Hitt, Robin G.
@@ -115,12 +115,12 @@ sessionInfo()
 
 # Data
 
-This manuscript uses two datasets: (1) focal behavioural observations,
-which is a file named “RBFW3_Anon_Data_210720.csv” and (2) opportunistic
-behavioural observations, which is a file named
-“RBFW3_Anon_Opportunistic_Data_230116.csv”
+This manuscript uses two data sets: (1) one containing focal behavioural
+observations, which is a file named “RBFW3_Anon_Data_210720.csv” and (2)
+one containing opportunistic behavioural observations, which is a file
+named “RBFW3_Anon_Opportunistic_Data_230116.csv”
 
-Both datasets have been uploads to Figshare using the following DOI
+Both data sets have been uploaded to Figshare using the following DOI
 links:
 
 - Focal data: <https://doi.org/10.6084/m9.figshare.15088014>
@@ -128,7 +128,7 @@ links:
 
 They are also available in the
 [fairywren-nonbreeding-behavior](https://github.com/treyhendrix/fairywren-nonbreeding-behavior)
-GitHub repository in the “Data” folder. The contents of these datasets
+GitHub repository in the “Data” folder. The contents of these data sets
 are detailed in the descriptions on Figshare and in a metadata/README
 file in the “Data” folder of the GitHub repository.
 
@@ -224,7 +224,7 @@ Age + Day of year + (1\|Observer) + (1\|Bird ID)*
 
 ## Preparing Data for Logistic Mixed-Effects Models
 
-First, it is necessary to add binary variables to our dataset for our
+First, it is necessary to add binary variables to our data set for our
 behaviours of interest:
 
 ``` r
@@ -1363,7 +1363,7 @@ model_fit_vizualizer(models[[3]], "Plumage_group_combined + Year + Age_st",
     ##  percent confidence interval:
     ##  0.000000000 0.002710027
     ## sample estimates:
-    ## outlier frequency (expected: 0.00024390243902439 ) 
+    ## outlier frequency (expected: 0.00021680216802168 ) 
     ##                                                  0
 
 ![](RBFW3_R_Code_figures_for_markdown/Assessing%20model%20fit-44.png)<!-- -->![](RBFW3_R_Code_figures_for_markdown/Assessing%20model%20fit-45.png)<!-- -->

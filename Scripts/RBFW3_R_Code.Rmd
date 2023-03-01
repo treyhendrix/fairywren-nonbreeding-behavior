@@ -2,14 +2,14 @@
 title: R Code for "Behavioural differences between ornamented and unornamented male
   Red-backed Fairywrens (*Malurus melanocephalus*) in the nonbreeding season"
 author: "Trey C. Hendrix"
-date: "Updated on 19 February 2023"
+date: "Updated on 1 March 2023"
 output: 
   rmarkdown::github_document:
     toc: true
     toc_depth: 2
 ---
 
-This document contains the R code used to produce the analyses, figures, and supplemental material for the article published in *Emu - Austral Ornithology* entitled "Behavioural differences between ornamented and unornamented male Red-backed Fairywrens (*Malurus melanocephalus*) in the nonbreeding season". The complete list of authors is: Trey C. Hendrix, Facundo Fernandez-Duque, Sarah Toner, Lauren G. Hitt, Robin G. Thady, Megan Massa, Samantha J. Hagler, Margaux Armfield, Nathalie Clarke, Phoebe Honscheid, Sarah Khalil, Carly E. Hawkins, Samantha M. Lantz, Joseph F. Welklin, John P. Swaddle, Michael S. Webster, and Jordan Karubian. The DOI for the journal article is: [10.1080/01584197.2023.2182224](http://dx.doi.org/10.1080/01584197.2023.2182224)
+This document contains the R code used to produce the analyses, figures, and supplemental material for the article published in *Emu - Austral Ornithology* titled "Behavioural differences between ornamented and unornamented male Red-backed Fairywrens (*Malurus melanocephalus*) in the nonbreeding season". The complete list of authors is: Trey C. Hendrix, Facundo Fernandez-Duque, Sarah Toner, Lauren G. Hitt, Robin G. Thady, Megan Massa, Samantha J. Hagler, Margaux Armfield, Nathalie Clarke, Phoebe Honscheid, Sarah Khalil, Carly E. Hawkins, Samantha M. Lantz, Joseph F. Welklin, John P. Swaddle, Michael S. Webster, and Jordan Karubian. The DOI for the journal article is: [10.1080/01584197.2023.2182224](http://dx.doi.org/10.1080/01584197.2023.2182224)
 
 ```{r setup, include = FALSE, warning = FALSE, message = FALSE, purl = FALSE}
 knitr::opts_chunk$set(
@@ -47,14 +47,14 @@ sessionInfo()
 ```
 
 # Data
-This manuscript uses two datasets: (1) focal behavioural observations, which is a file named "RBFW3_Anon_Data_210720.csv" and (2) opportunistic behavioural observations, which is a file named "RBFW3_Anon_Opportunistic_Data_230116.csv"
+This manuscript uses two data sets: (1) one containing focal behavioural observations, which is a file named "RBFW3_Anon_Data_210720.csv" and (2) one containing opportunistic behavioural observations, which is a file named "RBFW3_Anon_Opportunistic_Data_230116.csv"
 
-Both datasets have been uploads to Figshare using the following DOI links: 
+Both data sets have been uploaded to Figshare using the following DOI links: 
 
 * Focal data: [https://doi.org/10.6084/m9.figshare.15088014](https://doi.org/10.6084/m9.figshare.15088014)
 * Opportunistic data: [https://doi.org/10.6084/m9.figshare.21790187](https://doi.org/10.6084/m9.figshare.21790187)
 
-They are also available in the [fairywren-nonbreeding-behavior](https://github.com/treyhendrix/fairywren-nonbreeding-behavior) GitHub repository in the "Data" folder. The contents of these datasets are detailed in the descriptions on Figshare and in a metadata/README file in the "Data" folder of the GitHub repository. 
+They are also available in the [fairywren-nonbreeding-behavior](https://github.com/treyhendrix/fairywren-nonbreeding-behavior) GitHub repository in the "Data" folder. The contents of these data sets are detailed in the descriptions on Figshare and in a metadata/README file in the "Data" folder of the GitHub repository. 
 
 The majority of our analyses use the focal behavioural data, which is simply referred to as "RBFW" in the following code. The opportunistic behavioural data is used for generate supplementary figures and tables and is referred to as "RBFW_sup" in code. 
 ```{r Data Paths}
@@ -84,7 +84,7 @@ The general format of these models (in the notation of the lme4 package) is:
 *Behaviour of interest observed (1 or 0) ~ Plumage category + Year + Age + Day of year + (1|Observer) + (1|Bird ID)*
 
 ## Preparing Data for Logistic Mixed-Effects Models
-First, it is necessary to add binary variables to our dataset for our behaviours of interest:
+First, it is necessary to add binary variables to our data set for our behaviours of interest:
 ```{r Binary, include = TRUE}
 binaryifier <- function(var){
   ifelse(var > 0, 1, 0)
