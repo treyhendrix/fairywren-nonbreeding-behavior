@@ -1,5 +1,5 @@
 # README File for RBFW3 Data
-<p, markdown="1">The article titled "Behavioural differences between ornamented and unornamented male Red-backed Fairywrens (*Malurus melanocephalus*) in the nonbreeding season" makes use of two data sets. The primary data set is the file "RBFW3\_Anon\_Data\_210720.csv" and consists of focal behavioural observations. In the R code for this project, it is referred to as "RBFW." The data set "RBFW3\_Anon\_Opportunistic\_Data\_230116.csv" consists of opportunistic behavioural observations and is used to generate supplemental materials for the article. It is referred to as "RBFW_sup" in R code.</p, markdown="1">
+<p>The article titled "Behavioural differences between ornamented and unornamented male Red-backed Fairywrens (*Malurus melanocephalus*) in the nonbreeding season" makes use of two data sets. The primary data set is the file "RBFW3\_Anon\_Data\_210720.csv" and consists of focal behavioural observations. In the R code for this project, it is referred to as "RBFW." The data set "RBFW3\_Anon\_Opportunistic\_Data\_230116.csv" consists of opportunistic behavioural observations and is used to generate supplemental materials for the article. It is referred to as "RBFW_sup" in R code.</p>
 
 <p>These two datasets are available in the "Data" GitHub folder that contains the present README file and have also been uploaded to Figshare using the following DOI links: </p>
 
@@ -12,7 +12,7 @@ The contents of these two data sets are further detailed below:
 <p, markdown = "1">This is the dataset used in the main analyses in the manuscript "Behavioural differences between ornamented and unornamented male Red-backed Fairywrens (*Malurus melanocephalus*) in the nonbreeding season". Each row corresponds to a behavioural observation on a single male fairywren.</p, markdown="1">
 
 **Columns Describing Observations and Focal Male Characteristics:** 
-<p, , markdown="1">`Observation_ID` = unique identifier for each behavourial observation (or row)<br>
+<p>`Observation_ID` = unique identifier for each behavourial observation (or row)<br>
 `Date` = The date the observation was conducted in YYYY-MM-DD format<br>
 `Year` = The year the observation was conducted<br>
 `Time` = The time that the observation started in 24-hour format<br>
@@ -22,7 +22,7 @@ The contents of these two data sets are further detailed below:
 `Plumage_score` = Numerical scoring of a focal male's plumage colouration as per Karubian 2002<br>
 `Plumage_group` = Categories of plumage scores (DULL, MOULT, or BRIGHT) as per Karubian 2002<br>
 `Age` = Age of each focal male obtained through banding records<br>
-`Age_exact` = Either "exact" if we were able to determine a bird's precise age or "minimum" if only a minimum estimate (e.g., after second year) was possible</p, , markdown="1">
+`Age_exact` = Either "exact" if we were able to determine a bird's precise age or "minimum" if only a minimum estimate (e.g., after second year) was possible</p>
 
 **Behavioural Variables:**
 <p, markdown="1">The variables `Alarm_calling`, `Allopreening`, `Calling`, `Chasing`, `Chipping`, `Courtship`, `Flying`, `Foraging`, `Other`, `Preening`, `Scolding`, `Singing`, `Sitting`, `U`, and `Vocalizing` provide the number of seconds during a focal observation in which a male was engaging in these behaviours. These behaviors are described in table S1 (an ethogram). Note that `U` in the dataset is equivalent to "Out of sight" in table S1. During some years of our study, certain behaviours were not considered. In these situations, these values are given as "NA" rather than an integer. In particular, only `Vocalizing` (any vocalization other than alarm calling) was recorded in 2016 while more specific categories of vocalizations (e.g., `Calling`, `Chipping`, `Scolding`, and `Singing`) were reported in 2017 and 2018.</p, , markdown="1"> 
