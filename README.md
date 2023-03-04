@@ -1,7 +1,7 @@
 # Behavioural differences between ornamented and unornamented male Red-backed Fairywrens (*Malurus melanocephalus*) in the nonbreeding season
  This is the code for the following paper: 
  
- >  Hendrix, T.C., F. Fernandez-Duque, S. Toner, L.G. Hitt, R.G. Thady, M. Massa, S.J. Hagler, M. Armfield, N. Clarke, P. Honscheid, S. Khalil, C.E. Hawkins, S.M. Lantz, J.F. Welklin, J.P. Swaddle, M.S. Webster, and J. Karubian (In press) Behavioural differences between ornamented and unornamented male Red-backed Fairywrens (*Malurusmelanocephalus*) in the nonbreeding season. *Emu - Austral Ornithology*. [https://doi.org/10.1080/01584197.2023.2182224](https://doi.org/10.1080/01584197.2023.2182224)
+ >  Hendrix, T.C., F. Fernandez-Duque, S. Toner, L.G. Hitt, R.G. Thady, M. Massa, S.J. Hagler, M. Armfield, N. Clarke, P. Honscheid, S. Khalil, C.E. Hawkins, S.M. Lantz, J.F. Welklin, J.P. Swaddle, M.S. Webster, and J. Karubian (In press) Behavioural differences between ornamented and unornamented male Red-backed Fairywrens (*Malurus melanocephalus*) in the nonbreeding season. *Emu - Austral Ornithology*. [https://doi.org/10.1080/01584197.2023.2182224](https://doi.org/10.1080/01584197.2023.2182224)
  
  
 ## Project Abstract
