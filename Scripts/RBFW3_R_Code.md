@@ -3,7 +3,8 @@ male Red-backed Fairywrens (*Malurus melanocephalus*) in the nonbreeding
 season”
 ================
 Trey C. Hendrix
-Updated on 1 March 2023
+
+Updated on 20 March 2023
 
 - <a href="#required-packages" id="toc-required-packages">Required
   Packages</a>
@@ -1363,7 +1364,7 @@ model_fit_vizualizer(models[[3]], "Plumage_group_combined + Year + Age_st",
     ##  percent confidence interval:
     ##  0.000000000 0.002710027
     ## sample estimates:
-    ## outlier frequency (expected: 0.00021680216802168 ) 
+    ## outlier frequency (expected: 0.00024390243902439 ) 
     ##                                                  0
 
 ![](RBFW3_R_Code_figures_for_markdown/Assessing%20model%20fit-44.png)<!-- -->![](RBFW3_R_Code_figures_for_markdown/Assessing%20model%20fit-45.png)<!-- -->
